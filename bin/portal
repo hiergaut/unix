@@ -9,7 +9,7 @@ DIALOG=${DIALOG=dialog}
 
 
 function init() {
-    if [ -e $REP_VAR ]; then
+    if [ -e $REP_VAR/ip ]; then
 	echo -e "\\033[1;31mportal already open\\033[0m"
 	exit 6
     fi
@@ -27,6 +27,7 @@ function init() {
 	| awk '{if($2) print $0; else print $1, "22"}' | tr ' ' ':' > $ipPort
 
 
+    #TODO: dialog on debian failed
     ret=$($DIALOG --title "portal init" --column-separator ":" \
 	--menu "\nmachine is not below -> connect it with ssh" 0 0 0 \
 	$(cat -n $ipPort) 3>&2 2>&1 1>&3)
@@ -95,7 +96,7 @@ function status() {
     echo sync server : "$user@$ip:$port"
     echo
     echo "portal list :"
-    ssh $user@$ip -p $port ls .portal/ | grep -v backup
+    ssh $user@$ip -p $port ls .portal/ | grep -v backup | grep -v var | grep -v common
     echo
     echo "actual portal :"
     cd .portal/common/tree/
