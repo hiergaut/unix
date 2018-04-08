@@ -16,6 +16,10 @@ function init() {
 
     mkdir -p $REP_VAR
 
+    if [ ! -e ~/.ssh ]; then
+	echo "connect to your sync server with ssh before init portal"
+	exit 8
+    fi
 
     ipPort="$REP_TEMP/ipPort"
     cat ~/.ssh/known_hosts | awk '{print $1}' | tr ',' '\n' | tr -d '[]' | tr ':' ' ' \
