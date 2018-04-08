@@ -239,6 +239,9 @@ mirror() {
 
 base() {
     pacstrap $born base base-devel
+
+    #optional
+    pacstrap $born openssh zsh rsync wget
 }
 
 mirror2() {

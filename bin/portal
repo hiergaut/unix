@@ -14,12 +14,13 @@ function init() {
 	exit 6
     fi
 
-    mkdir -p $REP_VAR
-
     if [ ! -e ~/.ssh ]; then
 	echo "connect to your sync server with ssh before init portal"
 	exit 8
     fi
+
+    mkdir -p $REP_VAR
+
 
     ipPort="$REP_TEMP/ipPort"
     cat ~/.ssh/known_hosts | awk '{print $1}' | tr ',' '\n' | tr -d '[]' | tr ':' ' ' \
@@ -178,7 +179,8 @@ function merge() {
 		# dataRep="../data/${proper%/*}"
 		dataRep=$(father "../data/$proper")
 		mkdir -pv $dataRep
-		cmd="rsync -arvu $option --backup $backup $home/$proper $dataRep"
+		# cmd="rsync -arvu $option --backup $backup $home/$proper $dataRep"
+		cmd="rsync -arvu $option $home/$proper $dataRep"
 		echo -e "\\033[33m$cmd\\033[0m"
 		# own_printColor "$cmd" 33
 		# pwd
@@ -216,7 +218,8 @@ function merge() {
 
 		# user=$(stat -c "%U" $dataFile)
 		# group=$(stat -c "%G" $dataFile)
-		cmd="rsync -arvu $option --backup $backup $dataFile $home/$properRep"
+		# cmd="rsync -arvu $option --backup $backup $dataFile $home/$properRep"
+		cmd="rsync -arvu $option $dataFile $home/$properRep"
 		echo -e "\\033[33m$cmd\\033[0m"
 		# own_printColor "$cmd" 33
 		$cmd
