@@ -7,6 +7,9 @@ mkdir -p $REP_TEMP
 
 DIALOG=${DIALOG=dialog}
 
+#TODO no default dialog on debian or raspbian
+#TODO no tree command 
+#ssh failed ip
 
 function init() {
     if [ -e $REP_VAR/ip ]; then
@@ -333,6 +336,28 @@ function connect() {
     ssh $user@$ip -p $port
 }
 
+function save() {
+    lsblk
+    echo -n "usb device (default sdb) : "
+    read device
+    if [ ! $device ]
+    then
+	device="sdb"
+    fi
+
+    [ -e /dev/$device ]
+
+    sudo mount /dev/$device /mnt
+
+    rsync -arvu --delete .portal /mnt/
+
+    # rm /mnt/install
+    # ln -sv /mnt/common/data/root/bin/own_archlinux_install /mnt/install
+
+    sudo umount /mnt
+
+    df
+}
 
 
 
@@ -391,6 +416,10 @@ case $1 in
 
     "connect")
 	connect
+	;;
+
+    "save")
+	save
 	;;
 
     *)
