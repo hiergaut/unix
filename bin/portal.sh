@@ -1,109 +1,16 @@
 #! /bin/bash -e
 
-REP_VAR=".portal/var"
-REP_TEMP="/tmp/$0"
-mkdir -p $REP_TEMP
-# trap "rm -rf $REP_TEMP" 0 1 2 15
+CONFIG_REP="$HOME/.config/portal"
+VAR_REP=".portal/var"
+SAFE_FILE="$VAR_REP/lastSyncNotSafe"
 
-DIALOG=${DIALOG=dialog}
-
-#TODO no default dialog on debian or raspbian
-#TODO no tree command 
-#ssh failed ip
-
-function init() {
-    if [ -e $REP_VAR/ip ]; then
-	echo -e "\\033[1;31mportal already open\\033[0m"
-	exit 6
-    fi
-
-    if [ ! -e ~/.ssh ]; then
-	echo "connect to your sync server with ssh before init portal"
-	exit 8
-    fi
-
-    mkdir -p $REP_VAR
+TREE_REP=".portal/common/tree"
+DATA_REP=".portal/common/data"
 
 
-    ipPort="$REP_TEMP/ipPort"
-    cat ~/.ssh/known_hosts | awk '{print $1}' | tr ',' '\n' | tr -d '[]' | tr ':' ' ' \
-	| awk '{if($2) print $0; else print $1, "22"}' | tr ' ' ':' > $ipPort
-
-
-    #TODO: dialog on debian failed
-    ret=$($DIALOG --title "portal init" --column-separator ":" \
-	--menu "\nmachine is not below -> connect it with ssh" 0 0 0 \
-	$(cat -n $ipPort) 3>&2 2>&1 1>&3)
-    clear
-
-    line=$(sed "$ret""q;d" $ipPort)
-    ip=$(echo $line | awk -F: '{print $1}')
-    port=$(echo $line | awk -F: '{print $2}')
-
-
-    user=$($DIALOG --title "portal init" \
-	--inputbox "distant machine username" 0 0 \
-	3>&2 2>&1 1>&3)
-    clear
-
-    if ! ssh -p $port $user@$ip mkdir -p ".portal/"; then
-	echo -e "\\033[1;31mlog on machine failed\\033[0m"
-	exit 2
-    fi
-
-    echo $ip > $REP_VAR/ip
-    echo $port > $REP_VAR/port
-    echo $user > $REP_VAR/user
-    # mkdir -p .portal/tree
-    mkdir -p .portal/common/{tree,data}
-
-
-    # echo "portal list :"
-    # ssh $user@$ip -p $port ls .portal/ | grep -v backup
-}
-
-function initVar() {
-    port=$(cat .portal/var/port)
-    user=$(cat .portal/var/user)
-    ip=$(cat .portal/var/ip)
-    repoName=$(basename "$(pwd)")
-}
-
-function push() {
-    # own_bar "push"
-    initVar
-    backup="--backup-dir=/home/$user/.portal/backup/"
-
-    if $safe; then
-	option="--delete"
-    else
-	option=""
-    fi
-
-    # echo "rsync -arvu -e ssh -p $port $option --backup $backup .portal/ $user@$ip:~/.portal/$repoName/"
-    rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.portal/"$repoName"/
-}
-
-function pull() {
-    # own_bar "pull"
-    initVar 
-    backup="--backup-dir=../backup/"
-
-    # echo "rsync -arvu -e ssh -p $port --delete --backup $backup $user@$ip:~/.portal/$repoName/ .portal/"
-    rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/
-}
-
-function status() {
-    initVar
-
-    echo sync server : "$user@$ip:$port"
-    echo
-    echo "portal list :"
-    ssh $user@$ip -p $port ls .portal/ | grep -v backup | grep -v var | grep -v common
-    echo
-    echo "actual portal :"
-    cd .portal/common/tree/
-    find . -empty | cut -c 1-2 --complement | sort
+function print_color() {
+    [ $# -eq 2 ] || exit 1
+    echo -e "\033[$1"m"$2\033[0m"
 }
 
 function father() {
@@ -114,19 +21,138 @@ function father() {
 	echo "$1" | sed "s/\/$(basename $1).*/\//"
     fi
 }
+# REP_VAR=".portal/var"
+
+# TMP_REP="/tmp/$0"
+# mkdir -p $TMP_REP
+# trap "rm -rf $TMP_REP" 0 1 2 15
+
+# DIALOG=${DIALOG=dialog}
+
+#TODO no default dialog on debian or raspbian
+#TODO no tree command 
+#ssh failed ip
+
+function init() {
+    if [ -e .portal ]; then
+	print_color "1;32" "portal already open"
+	exit 0
+    fi
+    #
+    # if [ ! -e ~/.ssh ]; then
+    # echo "connect to your sync server with ssh before init portal"
+    # exit 8
+    # fi
+    #
+    # mkdir -p $REP_VAR
+    #
+    #
+    # ipPort="$TMP_REP/ipPort"
+    # cat ~/.ssh/known_hosts | awk '{print $1}' | tr ',' '\n' | tr -d '[]' | tr ':' ' ' \
+	# | awk '{if($2) print $0; else print $1, "22"}' | tr ' ' ':' > $ipPort
+    #
+    #
+    # #TODO : dialog on debian failed
+    # ret=$($DIALOG --title "portal init" --column-separator ":" \
+	# --menu "\nmachine is not below -> connect it with ssh" 0 0 0 \
+	# $(cat -n $ipPort) 3>&2 2>&1 1>&3)
+    # clear
+    #
+    # line=$(sed "$ret""q;d" $ipPort)
+    # ip=$(echo $line | awk -F: '{print $1}')
+    # port=$(echo $line | awk -F: '{print $2}')
+    #
+    #
+    # user=$($DIALOG --title "portal init" \
+	# --inputbox "distant machine username" 0 0 \
+	# 3>&2 2>&1 1>&3)
+    # clear
+    #
+    # if ! ssh -p $port $user@$ip mkdir -p ".portal/"; then
+    # echo -e "\\033[1;31mlog on machine failed\\033[0m"
+    # exit 2
+    # fi
+    #
+    # echo $ip > $REP_VAR/ip
+    # echo $port > $REP_VAR/port
+    # echo $user > $REP_VAR/user
+    # mkdir -p .portal/tree
+
+    # echo "portal list :"
+    # ssh $user@$ip -p $port ls .portal/ | grep -v backup
+    mkdir -p .portal/common/{tree,data}
+    mkdir -p $VAR_REP
+
+    repoName=$(basename "$(pwd)")
+    print_color "1;45" "$repoName"
+
+    if ssh $user@$ip -p $port [ -e .portal/$repoName ]
+    then
+	sync in
+    fi
+}
+
+
+function push() {
+    backup="--backup-dir=/home/$user/.portal/backup/"
+
+    if $safe; then
+	option="--delete"
+    else
+	option=""
+    fi
+
+    # echo "rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.portal/"$repoName"/"
+    rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.portal/"$repoName"/
+}
+
+function pull() {
+    backup="--backup-dir=../backup/"
+
+    # echo "rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/"
+    rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/
+}
+
+function status() {
+
+    print_color 33 "url server"
+    echo "$user@$ip:$port"
+    # echo
+    # echo -e "\033[33mportal list\033[0m"
+    # ssh $user@$ip -p $port ls .portal/ | grep -v backup | grep -v var | grep -v common
+    echo
+    print_color 33 "data list"
+    cd $TREE_REP/
+    for f in $(find -empty | cut -c 1-2 --complement | sort); do
+	if [ -d $f ]; then
+	    print_color "1;34" $f
+	else
+	    echo $f
+	fi
+    done
+}
+
 
 function add() {
+    echo "$dirRootSuppressed"
     if [ $# -ne 1 ]; then
 	echo "usage: $0 add file|repository" 2>&1
 	exit 4
     fi
 
     # dir=$(pwd)
-    if [ -d $1 ]; then
-	mkdir -pv .portal/common/tree/$1
-    else
-	touch .portal/common/tree/$1
+    if [ -e $TREE_REP/$1 ]; then
+	print_color "1;33" "file already exist"
+	exit 0
     fi
+
+    if [ -d $1 ]; then
+	# mkdir -pv $TREE_REP/$1
+	mkdir -p $TREE_REP/$1
+    else
+	touch $TREE_REP/$1
+    fi
+    print_color "1;32" "successfuly added"
 }
 
 function del() {
@@ -135,14 +161,19 @@ function del() {
 	exit 4
     fi
 
+    if [ ! -e $TREE_REP/$1 ]; then
+	print_color "1;33" "file not exist"
+	exit 0
+    fi
     # dir=$(pwd)
     if [ -d $1 ]; then
-	rm -rv .portal/common/tree/$1
-	rm -rv .portal/common/data/$1
+	rm -rf $TREE_REP/$1
+	rm -rf $DATA_REP/$1
     else
-	rm -v .portal/common/tree/$1
-	rm -v .portal/common/data/$1
+	rm -f $TREE_REP/$1
+	rm -f $DATA_REP/$1
     fi
+    print_color "1;32" "successfuly deleted"
 }
 
 function merge() {
@@ -185,7 +216,7 @@ function merge() {
 		mkdir -pv $dataRep
 		# cmd="rsync -arvu $option --backup $backup $home/$proper $dataRep"
 		cmd="rsync -arvu $option $home/$proper $dataRep"
-		echo -e "\\033[33m$cmd\\033[0m"
+		print_color 33 "$cmd"
 		# own_printColor "$cmd" 33
 		# pwd
 		$cmd
@@ -224,7 +255,7 @@ function merge() {
 		# group=$(stat -c "%G" $dataFile)
 		# cmd="rsync -arvu $option --backup $backup $dataFile $home/$properRep"
 		cmd="rsync -arvu $option $dataFile $home/$properRep"
-		echo -e "\\033[33m$cmd\\033[0m"
+		print_color 33 "$cmd"
 		# own_printColor "$cmd" 33
 		$cmd
 	    fi
@@ -241,17 +272,17 @@ function merge() {
 }
 
 function sync() {
-
-    if [ -e $REP_VAR/safe ]; then
-	safe="true"
-    else
+    if [ -e $SAFE_FILE ]; then
 	safe="false"
+    else
+	safe="true"
     fi
-    rm -f $REP_VAR/safe
+    # rm -f $VAR_REP/safe
+    touch $SAFE_FILE
 
     # own_isConnected
     if ! ping -c1 8.8.8.8 > /dev/null; then
-	echo -e "\\033[1;31mnot connected on internet\\033[0m"
+	print_color "1;31" "not connected on internet"
 	exit 1
     fi
 
@@ -270,12 +301,12 @@ function sync() {
 	merge branch > /dev/null
 	# own_common_merge branch
 
-	echo -e "\\033[1;31mbad last sync\\033[0m"
-	echo -e "\\033[1;33msafe push\\033[0m"
+	print_color "1;31" "bad last sync"
+	print_color 33 "safe push"
 	push
 	# own_common_push safe
 
-	echo -e "\\033[1;32mpull\\033[0m"
+	print_color 32 "pull"
 	pull
 
 	merge master > /dev/null
@@ -312,15 +343,14 @@ function sync() {
 	exit 1
     fi
 
-    touch $REP_VAR/safe
     # own_barStatus "sync ok"
     # touch -r "$HOME/var/$(cat /etc/hostname)" $lastSync
     # touch $lastSync
+    # touch $VAR_REP/safe
+    rm $SAFE_FILE
 }
 
-function backup() {
-    initVar
-
+function clean_backup() {
     if [ $# -ne 1 ]
     then
 	echo "usage: $0 backup clean" 2>&1
@@ -332,7 +362,6 @@ function backup() {
 }
 
 function connect() {
-    initVar
     ssh $user@$ip -p $port
 }
 
@@ -371,17 +400,73 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-if [ $1 != "init" ] && [ ! -e .portal ]; then
-    echo -e "\\033[1;31mnot a portal repo\\033[0m"
-    echo "use <portal init>"
-    exit 7
-fi
+if [ ! -e $CONFIG_REP ]; then
+    echo "need to initialize url of your save server data"
+    echo -n "ip : "
+    read ip
+    echo -n "user : "
+    read user
+    echo -n "port : "
+    read port
 
+    if ! ssh -p $port $user@$ip mkdir -p ".portal/"; then
+	print_color "1;31" "log on machine failed"
+	exit 2
+    fi
+
+    mkdir -p $CONFIG_REP
+    echo $port > $CONFIG_REP/port.var
+    echo $user > $CONFIG_REP/user.var
+    echo $ip > $CONFIG_REP/ip.var
+fi
+# if [ $1 != "init" ] && [ ! -e .portal ]; then
+#     echo -e "\\033[1;31mnot a portal repo\\033[0m"
+#     echo "use <portal init>"
+#     exit 7
+# fi
+
+function initVar() {
+    port=$(cat $CONFIG_REP/port.var)
+    user=$(cat $CONFIG_REP/user.var)
+    ip=$(cat $CONFIG_REP/ip.var)
+}
+initVar
+
+
+#first case not need root directory function
+did="true"
 case $1 in
     "init")
 	init
 	;;
 
+    "connect")
+	connect
+	;;
+
+    *)
+	did="false"
+	;;
+esac
+
+if $did ; then
+    exit 0
+fi
+
+function root() {
+    while [ ! -d .portal/ ]; do
+	dirRootSuppressed="$(basename $PWD)/$dirRootSuppressed"
+	cd ..
+    done
+}
+root
+
+
+repoName=$(basename "$(pwd)")
+print_color "1;45" "$repoName"
+
+
+case $1 in
     "push")
 	push
 	;;
@@ -410,13 +495,10 @@ case $1 in
 	status
 	;;
 
-    "backup")
-	backup $2
+    "clean_backup")
+	clean_backup $2
 	;;
 
-    "connect")
-	connect
-	;;
 
     "save")
 	save
