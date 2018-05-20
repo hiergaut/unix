@@ -7,6 +7,11 @@ SAFE_FILE="$VAR_REP/lastSyncNotSafe"
 TREE_REP=".portal/common/tree"
 DATA_REP=".portal/common/data"
 
+DEBUG="false"
+
+if [ ! -e /usr/bin/rsync ]; then
+    sudo apt-get install rsync
+fi
 
 function print_color() {
     [ $# -eq 2 ] || exit 1
@@ -86,7 +91,7 @@ function init() {
     repoName=$(basename "$(pwd)")
     print_color "1;45" "$repoName"
 
-    if ssh $user@$ip -p $port [ -e .portal/$repoName ]
+    if ssh $user@$ip -p $port [ -e .common/$repoName ]
     then
 	sync in
     else
@@ -96,6 +101,10 @@ function init() {
 
 
 function push() {
+    if $DEBUG; then
+	print_color "1;35" "push"
+    fi
+
     backup="--backup-dir=/home/$user/.common/backup/"
 
     if $safe; then
@@ -109,6 +118,9 @@ function push() {
 }
 
 function pull() {
+    if $DEBUG; then
+	print_color "1;35" "pull"
+    fi
     backup="--backup-dir=../backup/"
 
     # echo "rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/"
@@ -217,6 +229,9 @@ function merge() {
     then
 	# own_bar "merge branch"
 	# pwd
+	if $DEBUG; then
+	    print_color "1;36" "merge branch"
+	fi
 
 	find -empty | while read file
 	do
@@ -230,10 +245,14 @@ function merge() {
 		# cmd="rsync -arvu $option --backup $backup $home/$proper $dataRep"
 		if [ -e $home/$proper ]; then
 		    cmd="rsync -arvu $option $home/$proper $dataRep"
-		    print_color 33 "$cmd"
 		    # own_printColor "$cmd" 33
 		    # pwd
-		    $cmd > /dev/null
+		    if $DEBUG; then
+			print_color 33 "$cmd"
+			$cmd
+		    else
+			$cmd > /dev/null
+		    fi
 		else
 		    # print_color "1;31" "can't merge file '$proper' because not exists in your filesystem"
 		    print_color "1;32" "remove tree/$proper because not exists in your filesystem"
@@ -245,6 +264,9 @@ function merge() {
     elif [ $1 = "master" ]
     then
 	# own_bar "merge master"
+	if $DEBUG; then
+	    print_color "1;36" "merge master"
+	fi
 
 	find -empty | while read file
 	do
@@ -275,9 +297,13 @@ function merge() {
 		# cmd="rsync -arvu $option --backup $backup $dataFile $home/$properRep"
 		if [ -e $dataFile ]; then
 		    cmd="rsync -arvu $option $dataFile $home/$properRep"
-		    print_color 33 "$cmd"
 		    # own_printColor "$cmd" 33
-		    $cmd > /dev/null
+		    if $DEBUG; then
+			print_color 33 "$cmd"
+			$cmd
+		    else
+			$cmd > /dev/null
+		    fi
 		else
 		    # print_color "1;31" "can't merge file '$proper' because not exists in common"
 		    print_color "1;32" "remove tree/$proper because not exists in common"
@@ -379,14 +405,19 @@ function sync() {
 }
 
 function clean_backup() {
-    # if [ $# -ne 1 ]
-    # then
-	# echo "usage: $0 clean_backup" 2>&1
-	# exit 1
-    # fi
-
     rm -frv .portal/backup/
     ssh -p $port $user@$ip rm -frv .common/backup/
+}
+
+function clean() {
+    if [ -e $SAFE_FILE ]; then
+	print_color "1;31" "not safe last sync"
+	exit 1
+    fi
+
+    rm -frv $DATA_REP
+    print_color "33" "merge all branch newly clean"
+    sync out
 }
 
 function connect() {
@@ -394,26 +425,30 @@ function connect() {
 }
 
 function save() {
+    if [ ! -e $HOME/.common ]; then
+	print_color "1;31" "this machine is not a server with common file"
+	exit 0
+    fi
+
     lsblk
-    echo -n "usb device (default sdb) : "
+    echo -n "usb device (default sda): "
     read device
     if [ ! $device ]
     then
-	device="sdb"
+	device="sda"
     fi
 
     [ -e /dev/$device ]
 
     sudo mount /dev/$device /mnt
 
-    rsync -arvu --delete .portal /mnt/
+    rsync -arvu --delete $HOME/.common /mnt/
 
     # rm /mnt/install
     # ln -sv /mnt/common/data/root/bin/own_archlinux_install /mnt/install
 
+    df -h | grep --color $device
     sudo umount /mnt
-
-    df
 }
 
 
@@ -422,20 +457,49 @@ function save() {
 if [ $# -eq 0 ]; then
     echo "usage: portal <command> [<args>]"
     echo
-    echo "options:"
-    echo "    init          Open portal on current repository"
+    echo "command:"
+    echo "    init               open portal on current repository"
+    echo "    sync in|out        synchronize your data to the server"
+    echo "        +----------+              +----------+"
+    echo "        |          |      out     |          |"
+    echo "        |  portal  |  --------->  |  server  |"
+    echo "        |   ....   |  <---------  |          |"
+    echo "        ............       in     +----------+"
+    echo "            .portal/                  .common/"
+    echo
+    echo "    add <filename>     add sync file or repository"
+    echo "    del <filename>     delete sync file or repository"
+    echo "    status             show status"
+    echo "    clean              clean backup and hide file in common/data"
+    echo "    save               save all common file on server to external disk"
 
+	
+    exit 0
+fi
+
+if [ $1 = "save" ]; then
+    save
     exit 0
 fi
 
 if [ ! -e $CONFIG_REP ]; then
-    echo "need to initialize url of your save server data"
-    echo -n "ip : "
+    print_color 33 "need to initialize url of your save server data"
+
+    echo -n "ip (default localhost): "
     read ip
-    echo -n "user : "
+    [ -z $ip ] && ip=localhost
+
+    me=$(whoami)
+    echo -n "user (default $me): "
     read user
-    echo -n "port : "
+    [ -z $user ] && user=$me
+
+    echo -n "port (default 22): "
     read port
+    [ -z $port ] && port=22
+
+    [ ! -e $HOME/.ssh/id_rsa ] && ssh-keygen
+    ssh-copy-id -p $port $user@$ip
 
     if ! ssh -p $port $user@$ip mkdir -p ".common/"; then
 	print_color "1;31" "log on machine failed"
@@ -485,9 +549,21 @@ function root() {
     while [ ! -d .portal/ ]; do
 	dirRootSuppressed="$(basename $PWD)/$dirRootSuppressed"
 	cd ..
+
+	if [ $PWD = "/" ]; then
+	    print_color "1;33" "no portal open on this machine"
+	    exit 0
+	fi
     done
 }
 root
+
+if [ -e $VAR_REP/lock ]; then
+    print_color "1;31" "portal locked"
+    exit 0
+fi
+touch $VAR_REP/lock
+trap "rm $HOME/$VAR_REP/lock" 0 1 2 15
 
 
 repoName=$(basename "$(pwd)")
@@ -523,17 +599,16 @@ case $1 in
 	status
 	;;
 
-    "clean_backup")
+    # "clean_backup")
+	# clean_backup
+	# ;;
+
+    "clean")
+	clean
 	clean_backup
-	;;
-
-
-    "save")
-	save
 	;;
 
     *)
 	echo "unknown parameter"
-	exit 1
 	;;
 esac
