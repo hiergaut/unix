@@ -89,12 +89,14 @@ function init() {
     if ssh $user@$ip -p $port [ -e .portal/$repoName ]
     then
 	sync in
+    else
+	sync out
     fi
 }
 
 
 function push() {
-    backup="--backup-dir=/home/$user/.portal/backup/"
+    backup="--backup-dir=/home/$user/.common/backup/"
 
     if $safe; then
 	option="--delete"
@@ -103,18 +105,17 @@ function push() {
     fi
 
     # echo "rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.portal/"$repoName"/"
-    rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.portal/"$repoName"/
+    rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.common/"$repoName"/
 }
 
 function pull() {
     backup="--backup-dir=../backup/"
 
     # echo "rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/"
-    rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/
+    rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.common/"$repoName"/ .portal/common/
 }
 
 function status() {
-
     print_color 33 "url server"
     echo "$user@$ip:$port"
     # echo
@@ -134,44 +135,56 @@ function status() {
 
 
 function add() {
-    echo "$dirRootSuppressed"
+    # echo "$dirRootSuppressed"
+    dirFile="$dirRootSuppressed""$1"
+    # absolute="$repoName/$dirFile"
+    # print_color 33 "dirFile : $dirFile"
     if [ $# -ne 1 ]; then
 	echo "usage: $0 add file|repository" 2>&1
 	exit 4
     fi
 
     # dir=$(pwd)
-    if [ -e $TREE_REP/$1 ]; then
-	print_color "1;33" "file already exist"
+    if [ -e $TREE_REP/$dirFile ]; then
+	print_color "1;33" "'tree/$dirFile' already exist"
 	exit 0
     fi
 
-    if [ -d $1 ]; then
-	# mkdir -pv $TREE_REP/$1
-	mkdir -p $TREE_REP/$1
-    else
-	touch $TREE_REP/$1
+    if [ ! -e $dirFile ]; then
+	print_color "1;31" "'$dirFile' not exist in your filesystem"
+	exit 1
     fi
-    print_color "1;32" "successfuly added"
+
+    if [ -d $dirFile ]; then
+	# mkdir -pv $TREE_REP/$1
+	mkdir -p $TREE_REP/$dirFile
+    else
+	touch $TREE_REP/$dirFile
+    fi
+    print_color "1;32" "successfuly added in tree/$dirFile"
 }
 
 function del() {
+    dirFile="$dirRootSuppressed""$1"
+    # absolute="$repoName/$dirFile"
+    # print_color 33 "dirFile : $dirFile"
+
     if [ $# -ne 1 ]; then
 	echo "usage: $0 del file|repository" 2>&1
 	exit 4
     fi
 
-    if [ ! -e $TREE_REP/$1 ]; then
-	print_color "1;33" "file not exist"
+    if [ ! -e $TREE_REP/$dirFile ]; then
+	print_color "1;33" "'tree/$dirFile' not exist"
 	exit 0
     fi
     # dir=$(pwd)
-    if [ -d $1 ]; then
-	rm -rf $TREE_REP/$1
-	rm -rf $DATA_REP/$1
+    if [ -d $dirFile ]; then
+	rm -rf $TREE_REP/$dirFile
+	rm -rf $DATA_REP/$dirFile
     else
-	rm -f $TREE_REP/$1
-	rm -f $DATA_REP/$1
+	rm -f $TREE_REP/$dirFile
+	rm -f $DATA_REP/$dirFile
     fi
     print_color "1;32" "successfuly deleted"
 }
@@ -215,11 +228,17 @@ function merge() {
 		dataRep=$(father "../data/$proper")
 		mkdir -pv $dataRep
 		# cmd="rsync -arvu $option --backup $backup $home/$proper $dataRep"
-		cmd="rsync -arvu $option $home/$proper $dataRep"
-		print_color 33 "$cmd"
-		# own_printColor "$cmd" 33
-		# pwd
-		$cmd
+		if [ -e $home/$proper ]; then
+		    cmd="rsync -arvu $option $home/$proper $dataRep"
+		    print_color 33 "$cmd"
+		    # own_printColor "$cmd" 33
+		    # pwd
+		    $cmd > /dev/null
+		else
+		    # print_color "1;31" "can't merge file '$proper' because not exists in your filesystem"
+		    print_color "1;32" "remove tree/$proper because not exists in your filesystem"
+		    rm -r $proper
+		fi
 	    fi
 	done
 
@@ -254,10 +273,16 @@ function merge() {
 		# user=$(stat -c "%U" $dataFile)
 		# group=$(stat -c "%G" $dataFile)
 		# cmd="rsync -arvu $option --backup $backup $dataFile $home/$properRep"
-		cmd="rsync -arvu $option $dataFile $home/$properRep"
-		print_color 33 "$cmd"
-		# own_printColor "$cmd" 33
-		$cmd
+		if [ -e $dataFile ]; then
+		    cmd="rsync -arvu $option $dataFile $home/$properRep"
+		    print_color 33 "$cmd"
+		    # own_printColor "$cmd" 33
+		    $cmd > /dev/null
+		else
+		    # print_color "1;31" "can't merge file '$proper' because not exists in common"
+		    print_color "1;32" "remove tree/$proper because not exists in common"
+		    rm -r $proper
+		fi
 	    fi
 
 	done
@@ -298,7 +323,8 @@ function sync() {
 	# own_bar "sync out"
 	# own_barStatus "safe mode" 31
 
-	merge branch > /dev/null
+	# merge branch > /dev/null
+	merge branch
 	# own_common_merge branch
 
 	print_color "1;31" "bad last sync"
@@ -309,16 +335,16 @@ function sync() {
 	print_color 32 "pull"
 	pull
 
-	merge master > /dev/null
-	# merge master
+	# merge master > /dev/null
+	merge master
 
 
     elif [ $1 = "out" ]
     then
 	# own_bar "sync out"
 
-	merge branch > /dev/null
-	# merge branch
+	# merge branch > /dev/null
+	merge branch
 
 	push
 	# own_common_push safe
@@ -333,8 +359,10 @@ function sync() {
 	pull
 
 	# cat $temp
-	merge master > /dev/null
-	# merge master
+
+	# merge master > /dev/null
+	merge master
+
 	# cat $temp
 	# rm $temp
 
@@ -351,14 +379,14 @@ function sync() {
 }
 
 function clean_backup() {
-    if [ $# -ne 1 ]
-    then
-	echo "usage: $0 backup clean" 2>&1
-	exit 1
-    fi
+    # if [ $# -ne 1 ]
+    # then
+	# echo "usage: $0 clean_backup" 2>&1
+	# exit 1
+    # fi
 
     rm -frv .portal/backup/
-    ssh -p $port $user@$ip rm -frv .portal/backup/
+    ssh -p $port $user@$ip rm -frv .common/backup/
 }
 
 function connect() {
@@ -409,7 +437,7 @@ if [ ! -e $CONFIG_REP ]; then
     echo -n "port : "
     read port
 
-    if ! ssh -p $port $user@$ip mkdir -p ".portal/"; then
+    if ! ssh -p $port $user@$ip mkdir -p ".common/"; then
 	print_color "1;31" "log on machine failed"
 	exit 2
     fi
@@ -496,7 +524,7 @@ case $1 in
 	;;
 
     "clean_backup")
-	clean_backup $2
+	clean_backup
 	;;
 
 
