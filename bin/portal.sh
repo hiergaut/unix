@@ -425,6 +425,11 @@ function sync() {
     rm $SAFE_FILE
 }
 
+function save() {
+    touch $SAFE_FILE
+    sync out
+}
+
 function clean_backup() {
     rm -frv .portal/backup/
     ssh -p $port $user@$ip rm -frv .common/backup/
@@ -493,6 +498,7 @@ if [ $# -eq 0 ]; then
     echo "    status             show status"
     echo "    clean              clean backup and hide file in common/data"
     echo "    save               save all common file on server to external disk"
+    echo "    safe               sync in not safe mode, when two portal are open as same time"
 
 	
     exit 0
@@ -618,6 +624,10 @@ case $1 in
 
     "status")
 	status
+	;;
+
+    "safe")
+	safe
 	;;
 
     # "clean_backup")
