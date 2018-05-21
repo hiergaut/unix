@@ -333,10 +333,13 @@ function merge() {
     cd $home
 
     if [ -e .portal/backup ]; then
+	cd .portal
 	echo -en "\\033[1;33m"
-	find .portal/backup -amin 0.1
+	find backup -amin 0.1
 	echo -en "\\033[0m"
+	cd ..
     fi
+
     # barStatus "merge ok"
 }
 
