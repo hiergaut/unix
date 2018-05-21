@@ -9,8 +9,12 @@ DATA_REP=".portal/common/data"
 
 DEBUG="false"
 
-if [ ! -e /usr/bin/rsync ]; then
-    sudo apt-get install rsync
+if ! rsync > /dev/null; then
+    if sudo > /dev/null; then
+	sudo apt-get install rsync
+    else
+	su -c apt-get install rsync
+    fi
 fi
 
 function print_color() {
