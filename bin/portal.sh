@@ -9,8 +9,8 @@ DATA_REP=".portal/common/data"
 
 DEBUG="false"
 
-if ! rsync > /dev/null; then
-    if sudo > /dev/null; then
+if [ ! -e /usr/bin/rsync ]; then
+    if [ -e /usr/bin/sudo ]; then
 	sudo apt-get install rsync
     else
 	su -c 'apt-get install rsync'
