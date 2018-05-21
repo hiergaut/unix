@@ -335,7 +335,7 @@ function merge() {
     if [ -e .portal/backup ]; then
 	cd .portal
 	echo -en "\\033[1;33m"
-	find backup -amin 0.1
+	find backup -amin 1
 	echo -en "\\033[0m"
 	cd ..
     fi
