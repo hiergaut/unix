@@ -425,7 +425,7 @@ function sync() {
     rm $SAFE_FILE
 }
 
-function save() {
+function safe() {
     touch $SAFE_FILE
     sync out
 }
