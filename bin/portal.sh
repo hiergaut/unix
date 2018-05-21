@@ -125,6 +125,10 @@ function pull() {
 
     # echo "rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/"
     rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.common/"$repoName"/ .portal/common/
+
+    # echo -e "\\033[1;33m"
+    # find ../backup -amin 1
+    # echo -e "\\033[0m"
 }
 
 function status() {
@@ -146,6 +150,7 @@ function status() {
 }
 
 
+#TODO : vararg argument
 function add() {
     # echo "$dirRootSuppressed"
     dirFile="$dirRootSuppressed""$1"
@@ -220,7 +225,8 @@ function merge() {
 
 
     option="--delete"
-    backup="--backup-dir=../../backup"
+    backup="--backup-dir=$home/.portal/backup/"
+    # backup="--backup-dir=../backup/"
     # rsync -arvu . ../data/
 
     # own_bar "merge $1"
@@ -244,7 +250,7 @@ function merge() {
 		mkdir -pv $dataRep
 		# cmd="rsync -arvu $option --backup $backup $home/$proper $dataRep"
 		if [ -e $home/$proper ]; then
-		    cmd="rsync -arvu $option $home/$proper $dataRep"
+		    cmd="rsync -arvu $option --backup $backup $home/$proper $dataRep"
 		    # own_printColor "$cmd" 33
 		    # pwd
 		    if $DEBUG; then
@@ -253,6 +259,7 @@ function merge() {
 		    else
 			$cmd > /dev/null
 		    fi
+
 		else
 		    # print_color "1;31" "can't merge file '$proper' because not exists in your filesystem"
 		    print_color "1;32" "remove tree/$proper because not exists in your filesystem"
@@ -296,7 +303,7 @@ function merge() {
 		# group=$(stat -c "%G" $dataFile)
 		# cmd="rsync -arvu $option --backup $backup $dataFile $home/$properRep"
 		if [ -e $dataFile ]; then
-		    cmd="rsync -arvu $option $dataFile $home/$properRep"
+		    cmd="rsync -arvu $option --backup $backup $dataFile $home/$properRep"
 		    # own_printColor "$cmd" 33
 		    if $DEBUG; then
 			print_color 33 "$cmd"
@@ -318,7 +325,12 @@ function merge() {
 	exit 1
     fi
 
+
     cd $home
+
+    echo -en "\\033[1;33m"
+    find .portal/backup -amin 0.1
+    echo -en "\\033[0m"
     # barStatus "merge ok"
 }
 
@@ -563,7 +575,7 @@ if [ -e $VAR_REP/lock ]; then
     exit 0
 fi
 touch $VAR_REP/lock
-trap "rm $HOME/$VAR_REP/lock" 0 1 2 15
+trap "rm $PWD/$VAR_REP/lock" 0 1 2 15
 
 
 repoName=$(basename "$(pwd)")
