@@ -332,9 +332,11 @@ function merge() {
 
     cd $home
 
-    echo -en "\\033[1;33m"
-    find .portal/backup -amin 0.1
-    echo -en "\\033[0m"
+    if [ -e .portal/backup ]; then
+	echo -en "\\033[1;33m"
+	find .portal/backup -amin 0.1
+	echo -en "\\033[0m"
+    fi
     # barStatus "merge ok"
 }
 
@@ -567,7 +569,7 @@ function root() {
 	cd ..
 
 	if [ $PWD = "/" ]; then
-	    print_color "1;33" "no portal open on this machine"
+	    print_color "1;33" "no portal open on this machine, please init repo first"
 	    exit 0
 	fi
     done
