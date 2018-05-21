@@ -13,7 +13,7 @@ if ! rsync > /dev/null; then
     if sudo > /dev/null; then
 	sudo apt-get install rsync
     else
-	su -c apt-get install rsync
+	su -c 'apt-get install rsync'
     fi
 fi
 
