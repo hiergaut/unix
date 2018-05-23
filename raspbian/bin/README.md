@@ -3,3 +3,8 @@
 alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/S3QNFzmFdqs/0.jpg)](http://www.youtube.com/watch?v=S3QNFzmFdqs "Video Title")
+
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=S3QNFzmFdqs"><img src="https://img.youtube.com/vi/S3QNFzmFdqs/0.jpg" alt="IMAGE ALT TEXT"></a>
+</div>
