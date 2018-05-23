@@ -9,13 +9,6 @@ DATA_REP=".portal/common/data"
 
 DEBUG="false"
 
-if [ ! -e /usr/bin/rsync ]; then
-    if [ -e /usr/bin/sudo ]; then
-	sudo apt-get install rsync
-    else
-	su -c 'apt-get install rsync'
-    fi
-fi
 
 function print_color() {
     [ $# -eq 2 ] || exit 1
@@ -30,6 +23,17 @@ function father() {
 	echo "$1" | sed "s/\/$(basename $1).*/\//"
     fi
 }
+
+if [ ! -e /usr/bin/rsync ]; then
+    print_color 33 "install rsync"
+    if [ -e /usr/bin/sudo ]; then
+	print_color 33 "install rsync, passwd sudo"
+	sudo apt-get install rsync
+    else
+	print_color 33 "install rsync, passwd su"
+	su -c 'apt-get install rsync'
+    fi
+fi
 # REP_VAR=".portal/var"
 
 # TMP_REP="/tmp/$0"
@@ -41,6 +45,8 @@ function father() {
 #TODO no default dialog on debian or raspbian
 #TODO no tree command 
 #ssh failed ip
+
+#TODO make undo command
 
 function init() {
     if [ -e .portal ]; then
