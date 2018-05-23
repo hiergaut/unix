@@ -11,6 +11,7 @@ hPin=23
 #gpio pin of vertical rotation servo -90..90 degree
 vPin=18 
 
+
 #init gpio in output mode
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
@@ -83,7 +84,10 @@ def angle(vAngle, hAngle):
     vMax=25.0
 
     hMin=3.7
-    hMax=23.3
+    hMax=50.0
+
+
+
 
     hPwm =GPIO.PWM(hPin, f)
     vPwm =GPIO.PWM(vPin, f)

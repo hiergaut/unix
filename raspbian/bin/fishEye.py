@@ -1,6 +1,7 @@
 
 #import cv2
-from servo import angle
+#from servo import angle
+import servo
 import os
 import time
 
@@ -17,12 +18,14 @@ import time
 #for i in (0, 30):
 i=0
 for j in (0, 45, 90, 135, 180, -135, -90, -45):
-    angle(j, i)
-    time.sleep(1)
-            #if -90 <= j and j <= 90:
-                #	os.system('raspistill -t 1 -vf -hf -o photo_' +str(j) +'_' +str(i) +'.jpg')
-                #else:
-		#	os.system('raspistill -t 1 -o photo_' +str(j) +'_' +str(i) +'.jpg')
+    #time.sleep(1)
+    servo.angle(j, i)
+    #continue
+
+    if -90 <= j and j <= 90:
+        os.system('raspistill -t 100 -vf -hf -o photo_' +str(j) +'_' +str(i) +'.jpg')
+    else:
+        os.system('raspistill -t 100 -o photo_' +str(j) +'_' +str(i) +'.jpg')
 
 
 #cap.release()
