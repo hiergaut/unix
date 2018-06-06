@@ -78,6 +78,7 @@ is_efi() {
 born="/mnt"
 appTitle="Archlinux Installer"
 temp="/tmp/minimal"
+efi_rep="$born/boot/efi"
 
 init() {
     mkdir -v /tmp/minimal/
@@ -184,14 +185,17 @@ format() {
 mounting() {
     if is_efi
     then
-	mount -v /dev/sda2 $born
+	mount -v /dev/sda2 $born #root
+
 	mkdir -v $born/home
-	mkdir -v $born/boot
-	mkdir -v $born/esp
-	mount -v /dev/sda1 $born/esp/
 	mount -v /dev/sda3 $born/home/
-	mkdir -pv $born/esp/EFI/arch/
-	mount -v --bind $born/esp/EFI/arch/ $born/boot/
+
+	mkdir -pv $efi_rep
+	mount -t vfat /dev/sda1 $efi_rep
+	# mkdir -v $born/esp
+	# mount -v /dev/sda1 $born/esp/
+	# mkdir -pv $born/esp/EFI/arch/
+	# mount -v --bind $born/esp/EFI/arch/ $born/boot/
     else
 	mount -v /dev/sda2 $born
 	mkdir -v $born/home
@@ -296,20 +300,27 @@ fstab() {
 efi() {
     if is_efi
     then
-	modprobe efivarfs
-	pacstrap $born efibootmgr
-	id=$(blkid | grep sda2 | awk -F\" '{print $2}')
+	pacstrap $born grub os-prober
+	pacstrap $born efibootmgr dosfstools
 
-    #     arch-chroot $born /bin/bash << EOF
-    # cp /boot/intel-ucode.img /boot/efi/EFI/arch/intel-ucode.img
-    # efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\EFI\arch\vmlinuz-arch.efi" -u "root=UUID=$id rootfstype=ext4 initrd=\EFI\arch\intel-ucode.img initrd=\EFI\arch\initramfs-arch.img rw add_efi_memmap"
-    # efibootmgr -T
-    # EOF
+	mkdir -pv $efi_rep/EFI
+	arch_chroot "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck"
+	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
 
-	arch-chroot $born /bin/bash << EOF
-efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\\EFI\\arch\\vmlinuz-linux" -u "root=UUID=$id rootfstype=ext4 initrd=\\EFI\\arch\\initramfs-linux.img rw add_efi_memmap"
-efibootmgr -T
-EOF
+# 	modprobe efivarfs
+# 	pacstrap $born efibootmgr
+# 	id=$(blkid | grep sda2 | awk -F\" '{print $2}')
+#
+#     #     arch-chroot $born /bin/bash << EOF
+#     # cp /boot/intel-ucode.img /boot/efi/EFI/arch/intel-ucode.img
+#     # efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\EFI\arch\vmlinuz-arch.efi" -u "root=UUID=$id rootfstype=ext4 initrd=\EFI\arch\intel-ucode.img initrd=\EFI\arch\initramfs-arch.img rw add_efi_memmap"
+#     # efibootmgr -T
+#     # EOF
+#
+# 	arch-chroot $born /bin/bash << EOF
+# efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\\EFI\\arch\\vmlinuz-linux" -u "root=UUID=$id rootfstype=ext4 initrd=\\EFI\\arch\\initramfs-linux.img rw add_efi_memmap"
+# efibootmgr -T
+# EOF
 
     else
 	pacstrap $born syslinux
