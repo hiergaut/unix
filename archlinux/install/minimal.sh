@@ -416,16 +416,25 @@ addUser() {
 
 # useradd -g users -G wheel -m -s /bin/sh $userName
     arch-chroot $born /bin/sh << EOF
-useradd -g users -G wheel -m $userName
+useradd -g users -G wheel -m $userName -s /bin/zsh
 echo -e "$passwd\n$passwd" | passwd $userName
 EOF
 }
 
-# sudoers() {
-#     cp -v $born/etc/sudoers $born/etc/sudoers.default
-#     sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' $born/etc/sudoers
-#     # sed -i 's/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/' $born/etc/sudoers
-# }
+zsh() {
+    pacstrap $born zsh
+    arch-chroot $born /bin/sh << EOF
+chsh -s /bin/zsh
+EOF
+    cp ~/.zshrc $born/root/
+    cp ~/.zshrc $born/home/$(cat $temp/addUser)
+}
+
+sudoers() {
+    cp -v $born/etc/sudoers $born/etc/sudoers.default
+    sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' $born/etc/sudoers
+    # sed -i 's/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/' $born/etc/sudoers
+}
 
 wifi() {
     if iwconfig 2>&1 | grep ESSID | grep -v off > /dev/null
@@ -458,6 +467,8 @@ for function in \
     keyboard2 \
     mkinit \
     addUser \
+    zsh \
+    sudoers \
     wifi \
     umounting
 do
