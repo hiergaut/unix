@@ -91,7 +91,8 @@ keyboard() {
     for item in $items; do
 	options+=("$item" "")
     done
-    key=$(whiptail --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
+    # key=$(whiptail --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
+    key=$(whiptail --backtitle "$appTitle" --title "Keymap Selection" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -119,7 +120,8 @@ timeZone() {
     for item in $items; do
 	options+=("$item" "")
     done
-    timezone=$timezone/$(whiptail --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
+    # timezone=$timezone/$(whiptail --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
+    timezone=$timezone/$(whiptail --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -132,7 +134,8 @@ timeZone() {
 format() {
     if is_efi
     then
-	if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
+	# if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
+	if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted /dev/sda mklabel gpt\\033[0m"
 	    parted /dev/sda mklabel gpt -ms
@@ -218,7 +221,8 @@ mirror() {
     for item in $items; do
 	options+=("$item" "")
     done
-    country=$(whiptail --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
+    # country=$(whiptail --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
+    country=$(whiptail --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -237,15 +241,18 @@ mirror() {
 	fi
     done
 
-    rankmirrors $file -v | tee /tmp/minimal/rank
-    mv /tmp/minimal/rank $file
+    if [ -e /usr/bin/rankmirrors ]; then
+	rankmirrors $file -v | tee /tmp/minimal/rank
+	mv /tmp/minimal/rank $file
+    fi
 }
 
 base() {
     pacstrap $born base base-devel
 
     #optional
-    pacstrap $born openssh zsh rsync wget dialog vim
+    # pacstrap $born openssh zsh rsync wget dialog vim
+    pacstrap $born wget
 }
 
 mirror2() {
@@ -260,7 +267,8 @@ hostname() {
     host=""
     while [ -z $host ]
     do
-	host=$(whiptail --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 40 "" 3>&1 1>&2 2>&3)
+	# host=$(whiptail --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 40 "" 3>&1 1>&2 2>&3)
+	host=$(whiptail --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
     # cp -v $born/etc/hostname $born/etc/hostname.default
     echo $host > $born/etc/hostname
@@ -304,8 +312,10 @@ efi() {
 	pacstrap $born efibootmgr dosfstools
 
 	mkdir -pv $efi_rep/EFI
-	arch_chroot "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck"
-	arch_chroot "grub-mkconfig -o /boot/grub/grub.cfg"
+	arch-chroot $born /bin/bash << EOF
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
+grub-mkconfig -o /boot/grub/grub.cfg
+EOF
 
 # 	modprobe efivarfs
 # 	pacstrap $born efibootmgr
@@ -457,7 +467,7 @@ do
 	eval "$function"
 	barStatus "$function : done" 32
 	# sleep 1
-	# read
+	read
 	touch "/tmp/minimal/$function"
     fi
 done
