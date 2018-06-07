@@ -66,6 +66,10 @@ barStatus() {
     echo -e "\\033[1;$couleur"m"$string\\033[0m"
 }
 
+print_color() {
+    echo -e "\\033[$2"m"$1\\033[0m"
+}
+
 is_efi() {
     if [ -d /sys/firmware/efi/ ]
     then
@@ -96,7 +100,7 @@ keyboard() {
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
-    echo "loadkeys $key"
+    print_color "loadkeys $key" 33
     loadkeys $key
     echo "$key" > $temp/keyboard
 }
@@ -126,8 +130,12 @@ timeZone() {
 	3>&1 1>&2 2>&3)
 
 
-    echo "timedatectl set-ntp true"
-    echo "timedatectl set-timezone $timezone"
+    print_color "timedatectl set-ntp true" 33
+    timedatectl set-ntp true
+
+    print_color "timedatectl set-timezone $timezone" 33
+    timedatectl set-timezone $timezone
+
     echo "$timezone" > $temp/timeZone
 }
 
@@ -135,7 +143,7 @@ format() {
     if is_efi
     then
 	# if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-	if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 0)
+	if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted /dev/sda mklabel gpt\\033[0m"
 	    parted /dev/sda mklabel gpt -ms
@@ -143,8 +151,10 @@ format() {
 	    parted /dev/sda mkpart ESP fat32 1MiB 513Mib -ms
 	    echo -e "\\033[33mparted /dev/sda set 1 boot on\\033[0m"
 	    parted /dev/sda set 1 boot on -ms
+
 	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 513Mib 40.5Gib\\033[0m"
 	    parted /dev/sda mkpart primary ext4 513Mib 40.5Gib -ms
+
 	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 40.5Gib 100%\\033[0m"
 	    parted /dev/sda mkpart primary ext4 40.5Gib 100% -ms
 	    echo
@@ -159,7 +169,7 @@ format() {
 	    return 1
 	fi
     else
-	if (whiptail --backtitle "$appTitle" --title "Format DOS" --yesno "/dev/sda1   512M   Linux\n/dev/sda2   40G    Linux\n/dev/sda3   *G     Linux\n\n\n                                 Commit ?" 0 80)
+	if (whiptail --backtitle "$appTitle" --title "Format DOS" --yesno "/dev/sda1   512M   Linux\n/dev/sda2   40G    Linux\n/dev/sda3   *G     Linux\n\n\n             Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted /dev/sda mklabel dos\\033[0m"
 	    parted /dev/sda mklabel msdos -ms
@@ -241,10 +251,11 @@ mirror() {
 	fi
     done
 
-    if [ -e /usr/bin/rankmirrors ]; then
-	rankmirrors $file -v | tee /tmp/minimal/rank
-	mv /tmp/minimal/rank $file
-    fi
+    pacman-mirrors -g
+    # if rankmirrors > /dev/null; then
+	# rankmirrors $file -v | tee /tmp/minimal/rank
+	# mv /tmp/minimal/rank $file
+    # fi
 }
 
 base() {
@@ -252,7 +263,7 @@ base() {
 
     #optional
     # pacstrap $born openssh zsh rsync wget dialog vim
-    pacstrap $born wget
+    pacstrap $born wget # to download post script installation
 }
 
 mirror2() {
@@ -272,7 +283,7 @@ hostname() {
     done
     # cp -v $born/etc/hostname $born/etc/hostname.default
     echo $host > $born/etc/hostname
-    cat $born/etc/hostname
+    # cat $born/etc/hostname
 
 
     # cp -v $born/etc/hosts $born/etc/hosts.default
@@ -305,20 +316,32 @@ fstab() {
     cat $born/etc/fstab
 }
 
-efi() {
+bootLoader() {
+    #TODO syslinux
     if is_efi
     then
-	pacstrap $born grub os-prober
-	pacstrap $born efibootmgr dosfstools
 
-	mkdir -pv $efi_rep/EFI
+	##grub efi
+# 	pacstrap $born grub os-prober
+# 	pacstrap $born efibootmgr dosfstools
+#
+# 	mkdir -pv $efi_rep/EFI
+# 	arch-chroot $born /bin/bash << EOF
+# grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
+# grub-mkconfig -o /boot/grub/grub.cfg
+# EOF
+
+	#syslinux efi
 	arch-chroot $born /bin/bash << EOF
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
-grub-mkconfig -o /boot/grub/grub.cfg
+pacman -S syslinux dosfstools efibootmgr
+mkdir -p $efi_rep/EFI/syslinux
+cp -r /usr/lib/syslinux/efi64/* $efi_rep/EFI/syslinux
+mount -t efivarfs efivrfs /sys/firmware/efi/efivars
+efibootmgr -c -d /dev/sda -p 1 -l /EFI/syslinux/syslinux.efi -L "Syslinux"
 EOF
 
-# 	modprobe efivarfs
-# 	pacstrap $born efibootmgr
+	# modprobe efivarfs
+	# pacstrap $born efibootmgr
 # 	id=$(blkid | grep sda2 | awk -F\" '{print $2}')
 #
 #     #     arch-chroot $born /bin/bash << EOF
@@ -354,8 +377,8 @@ rootPasswd() {
     str2="b"
     while [ $str1 != $str2 ]
     do
-	str1=$(whiptail --backtitle "$appTitle" --title "Passwd Root" --passwordbox "" 8 80 "" 3>&1 1>&2 2>&3)
-	str2=$(whiptail --backtitle "$appTitle" --title "Repeat Passwd Root" --passwordbox "" 8 80 "" 3>&1 1>&2 2>&3)
+	str1=$(whiptail --backtitle "$appTitle" --title "Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str2=$(whiptail --backtitle "$appTitle" --title "Repeat Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
     passwd="$str1"
 
@@ -369,6 +392,7 @@ EOF
 
 timeZone2() {
     # cp $born/etc/localtime $born/etc/localtime.default
+    print_color "ln -vfs /usr/share/zoneinfo/$(cat $temp/timeZone) $born/etc/localtime" 33
     ln -vfs /usr/share/zoneinfo/$(cat $temp/timeZone) $born/etc/localtime
 #     arch-chroot $born /bin/sh << EOF
 # timedatectl set-ntp true
@@ -382,21 +406,25 @@ locale() {
     # cp $born/etc/locale.gen $born/etc/locale.gen.default
     cp /etc/locale.gen $born/etc/locale.gen
     arch-chroot $born locale-gen
+    #TODO echo LANG="en-US.UTF-8" > /etc/locale.conf
 }
 
 keyboard2() {
     # cp -v $born/etc/vconsole.conf $born/etc/vconsole.conf.default
-    echo KEYMAP=$(cat $temp/keyboard) | tee $born/etc/vconsole.conf
+    str="KEYMAP=$(cat $temp/keyboard)"
+    echo $str > $born/etc/vconsole.conf
+    print_color "echo $str > $born/etc/vconsole.conf" 33
 }
 
 mkinit() {
+    print_color "mkinitcpio -p linux" 33
     arch-chroot $born mkinitcpio -p linux
 }
 
 addUser() {
-    while [ ! $userName ]
+    while [ -z "$userName" ]
     do
-	userName=$(whiptail --backtitle "$appTitle" --title "Add User" --inputbox "" 0 40 "" 3>&1 1>&2 2>&3)
+	userName=$(whiptail --backtitle "$appTitle" --title "Add User" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
 
     str1="a"
@@ -404,8 +432,8 @@ addUser() {
     comment=""
     while [ $str1 != $str2 ]
     do
-	str1=$(whiptail --backtitle "$appTitle" --title "Passwd $userName  $comment" --passwordbox "" 8 80 "" 3>&1 1>&2 2>&3)
-	str2=$(whiptail --backtitle "$appTitle" --title "Repeat Passwd $userName" --passwordbox "" 8 80 "" 3>&1 1>&2 2>&3)
+	str1=$(whiptail --backtitle "$appTitle" --title "Passwd $userName  $comment" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str2=$(whiptail --backtitle "$appTitle" --title "Repeat Passwd $userName" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
 
 	if [ "$str1" == "$(cat $temp/rootPasswd)" ]; then
 	    str1="a"
@@ -419,6 +447,8 @@ addUser() {
 useradd -g users -G wheel -m $userName -s /bin/zsh
 echo -e "$passwd\n$passwd" | passwd $userName
 EOF
+
+    echo "$userName" > $temp/addUser
 }
 
 zsh() {
@@ -426,8 +456,10 @@ zsh() {
     arch-chroot $born /bin/sh << EOF
 chsh -s /bin/zsh
 EOF
-    cp ~/.zshrc $born/root/
-    cp ~/.zshrc $born/home/$(cat $temp/addUser)
+    
+    zsh_file="/etc/zsh/zshrc"
+    cp -v $zsh_file $born/root/
+    cp -v $zsh_file $born/home/$(cat $temp/addUser)
 }
 
 sudoers() {
@@ -460,7 +492,7 @@ for function in \
     mirror2 \
     hostname \
     fstab \
-    efi \
+    bootLoader \
     rootPasswd \
     timeZone2 \
     locale \
@@ -485,7 +517,7 @@ done
 
 # rm -r /tmp/minimal/
 
-if (whiptail --backtitle "$appTitle" --title "Shutdown" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n                              Poweroff now ?" 0 80)
+if (whiptail --backtitle "$appTitle" --title "Shutdown" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n            Poweroff now ?" 0 0)
 then
     poweroff
 fi
