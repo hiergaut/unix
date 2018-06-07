@@ -73,6 +73,7 @@ print_color() {
 is_efi() {
     if [ -d /sys/firmware/efi/ ]
     then
+	print_color "EFI" "1;33"
 	return 0
     else
 	return 1
@@ -269,10 +270,12 @@ mirror() {
 }
 
 base() {
+    print_color "install base base-devel" 33
     pacstrap $born base base-devel
 
     #optional
     # pacstrap $born openssh zsh rsync wget dialog vim
+    print_color "install wget to post possible download script"
     pacstrap $born wget # to download post script installation
 }
 
@@ -313,6 +316,7 @@ fstab() {
     # cat $born/etc/fstab
 
     # genfstab -U -p $born | head -n +9 >> $born/etc/fstab
+    print_color "genfstab -U -p $born >> $born/etc/fstab" 33
     genfstab -U -p $born >> $born/etc/fstab
 
     # sed -i s/"\/mnt\/"/"\/"/ /mnt/etc/fstab
@@ -346,7 +350,7 @@ bootLoader() {
 pacman -S syslinux dosfstools efibootmgr
 mkdir -p $efi_rep/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* $efi_rep/EFI/syslinux
-mount -t efivarfs efivrfs /sys/firmware/efi/efivars
+mount -t efivarfs efivarfs /sys/firmware/efi/efivarfs
 efibootmgr -c -d /dev/sda -p 1 -l /EFI/syslinux/syslinux.efi -L "Syslinux"
 EOF
 
@@ -387,7 +391,7 @@ rootPasswd() {
     str2="b"
     while [ $str1 != $str2 ]
     do
-	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --passwordbox "Enter root password" 0 0 3>&1 1>&2 2>&3)
 	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
     passwd="$str1"
