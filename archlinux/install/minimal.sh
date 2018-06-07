@@ -421,13 +421,16 @@ locale() {
     cp /etc/locale.gen $born/etc/locale.gen
     arch-chroot $born locale-gen
     #TODO echo LANG="en-US.UTF-8" > /etc/locale.conf
+    echo 'LANG="en-US.UTF-8"' > $born/etc/locale.conf
 }
 
 keyboard2() {
     # cp -v $born/etc/vconsole.conf $born/etc/vconsole.conf.default
     str="KEYMAP=$(cat $temp/keyboard)"
-    echo $str > $born/etc/vconsole.conf
-    print_color "echo $str > $born/etc/vconsole.conf" 33
+
+    [ -e $born/etc/vconsole.conf ] && exit 1
+    echo "$str" > $born/etc/vconsole.conf
+    print_color "echo '$str' > $born/etc/vconsole.conf" 33
 }
 
 mkinit() {
@@ -444,7 +447,7 @@ addUser() {
     str1="a"
     str2="b"
     comment=""
-    while [ $str1 != $str2 ]
+    while [ "$str1" != "$str2" ]
     do
 	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd $userName  $comment" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
 	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd $userName" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
@@ -466,7 +469,13 @@ EOF
 }
 
 zsh() {
+    print_color "pacstrap $born zsh" 33
     pacstrap $born zsh
+
+    print_color "arch-chroot $born /bin/sh << EOF
+chsh -s /bin/zsh
+EOF
+" 33
     arch-chroot $born /bin/sh << EOF
 chsh -s /bin/zsh
 EOF
@@ -478,6 +487,7 @@ EOF
 
 sudoers() {
     cp -v $born/etc/sudoers $born/etc/sudoers.default
+
     sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' $born/etc/sudoers
     # sed -i 's/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/' $born/etc/sudoers
 }
@@ -485,6 +495,7 @@ sudoers() {
 wifi() {
     if iwconfig 2>&1 | grep ESSID | grep -v off > /dev/null
     then
+	print_color "install wifi package for a post install"
 	# pacstrap $born wireless_tools wpa_supplicant dialog
 	pacstrap $born wpa_supplicant dialog
 	cp -v /etc/netctl/wlp* $born/etc/netctl/
@@ -532,7 +543,7 @@ done
 
 # rm -r /tmp/minimal/
 
-if ($DIALOG --backtitle "$appTitle" --title "Shutdown" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n            Poweroff now ?" 0 0)
+if ($DIALOG --backtitle "$appTitle" --title "Shutdown" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n                   Poweroff now ?" 0 0)
 then
     poweroff
 fi
