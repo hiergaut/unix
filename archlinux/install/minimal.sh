@@ -391,7 +391,7 @@ rootPasswd() {
     str2="b"
     while [ $str1 != $str2 ]
     do
-	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --passwordbox "Enter root password" 0 0 3>&1 1>&2 2>&3)
+	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
 	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
     passwd="$str1"
