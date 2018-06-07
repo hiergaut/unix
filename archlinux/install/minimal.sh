@@ -83,10 +83,9 @@ born="/mnt"
 appTitle="Archlinux Installer"
 temp="/tmp/minimal"
 efi_rep="$born/boot/efi"
+DIALOG=${DIALOG=dialog}
 
-init() {
-    mkdir -v /tmp/minimal/
-}
+mkdir -pv $temp
 
 keyboard() {
     # items=$(localectl list-keymaps)
@@ -95,8 +94,8 @@ keyboard() {
     for item in $items; do
 	options+=("$item" "")
     done
-    # key=$(whiptail --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-    key=$(whiptail --backtitle "$appTitle" --title "Keymap Selection" --menu "" 0 0 0 \
+    # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
+    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -111,7 +110,7 @@ timeZone() {
     for item in $items; do
 	options+=("$item" "")
     done
-    timezone=$(whiptail --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
+    timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
     if [ ! "$?" = "0" ]; then
@@ -124,8 +123,8 @@ timeZone() {
     for item in $items; do
 	options+=("$item" "")
     done
-    # timezone=$timezone/$(whiptail --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
-    timezone=$timezone/$(whiptail --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
+    # timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
+    timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -142,8 +141,8 @@ timeZone() {
 format() {
     if is_efi
     then
-	# if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-	if (whiptail --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
+	# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
+	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted /dev/sda mklabel gpt\\033[0m"
 	    parted /dev/sda mklabel gpt -ms
@@ -151,12 +150,15 @@ format() {
 	    parted /dev/sda mkpart ESP fat32 1MiB 513Mib -ms
 	    echo -e "\\033[33mparted /dev/sda set 1 boot on\\033[0m"
 	    parted /dev/sda set 1 boot on -ms
+	    echo
 
 	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 513Mib 40.5Gib\\033[0m"
 	    parted /dev/sda mkpart primary ext4 513Mib 40.5Gib -ms
+	    echo
 
 	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 40.5Gib 100%\\033[0m"
 	    parted /dev/sda mkpart primary ext4 40.5Gib 100% -ms
+	    echo
 	    echo
 
 	    echo -e "\\033[33mmkfs.vfat -F32 /dev/sda1\\033[0m"
@@ -169,7 +171,7 @@ format() {
 	    return 1
 	fi
     else
-	if (whiptail --backtitle "$appTitle" --title "Format DOS" --yesno "/dev/sda1   512M   Linux\n/dev/sda2   40G    Linux\n/dev/sda3   *G     Linux\n\n\n             Commit ?" 0 0)
+	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "/dev/sda1   512M   Linux\n/dev/sda2   40G    Linux\n/dev/sda3   *G     Linux\n\n\n             Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted /dev/sda mklabel dos\\033[0m"
 	    parted /dev/sda mklabel msdos -ms
@@ -216,6 +218,14 @@ mounting() {
 	mount -v /dev/sda1 $born/boot/
 	mount -v /dev/sda3 $born/home/
     fi
+
+    print_color "df" 33
+    df
+}
+
+update() {
+    mount -o remount,size=4G /run/archiso/cowspace
+    pacman -Syu pacman-contrib
 }
 
 mirror() {
@@ -231,8 +241,8 @@ mirror() {
     for item in $items; do
 	options+=("$item" "")
     done
-    # country=$(whiptail --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
-    country=$(whiptail --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 0 0 0 \
+    # country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
+    country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -251,10 +261,10 @@ mirror() {
 	fi
     done
 
-    pacman-mirrors -g
+    # pacman-mirrors -g
     # if rankmirrors > /dev/null; then
-	# rankmirrors $file -v | tee /tmp/minimal/rank
-	# mv /tmp/minimal/rank $file
+    rankmirrors $file -v | tee /tmp/minimal/rank
+    mv /tmp/minimal/rank $file
     # fi
 }
 
@@ -278,8 +288,8 @@ hostname() {
     host=""
     while [ -z $host ]
     do
-	# host=$(whiptail --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 40 "" 3>&1 1>&2 2>&3)
-	host=$(whiptail --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	# host=$($DIALOG --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 40 "" 3>&1 1>&2 2>&3)
+	host=$($DIALOG --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
     # cp -v $born/etc/hostname $born/etc/hostname.default
     echo $host > $born/etc/hostname
@@ -377,8 +387,8 @@ rootPasswd() {
     str2="b"
     while [ $str1 != $str2 ]
     do
-	str1=$(whiptail --backtitle "$appTitle" --title "Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-	str2=$(whiptail --backtitle "$appTitle" --title "Repeat Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
     passwd="$str1"
 
@@ -424,7 +434,7 @@ mkinit() {
 addUser() {
     while [ -z "$userName" ]
     do
-	userName=$(whiptail --backtitle "$appTitle" --title "Add User" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	userName=$($DIALOG --backtitle "$appTitle" --title "Add User" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
 
     str1="a"
@@ -432,8 +442,8 @@ addUser() {
     comment=""
     while [ $str1 != $str2 ]
     do
-	str1=$(whiptail --backtitle "$appTitle" --title "Passwd $userName  $comment" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-	str2=$(whiptail --backtitle "$appTitle" --title "Repeat Passwd $userName" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd $userName  $comment" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd $userName" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
 
 	if [ "$str1" == "$(cat $temp/rootPasswd)" ]; then
 	    str1="a"
@@ -482,11 +492,11 @@ umounting() {
 }
 
 for function in \
-    init \
     keyboard \
     timeZone \
     format \
     mounting \
+    update \
     mirror \
     base \
     mirror2 \
@@ -510,6 +520,7 @@ do
 	eval "$function"
 	barStatus "$function : done" 32
 	# sleep 1
+	# optional
 	read
 	touch "/tmp/minimal/$function"
     fi
@@ -517,7 +528,7 @@ done
 
 # rm -r /tmp/minimal/
 
-if (whiptail --backtitle "$appTitle" --title "Shutdown" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n            Poweroff now ?" 0 0)
+if ($DIALOG --backtitle "$appTitle" --title "Shutdown" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n            Poweroff now ?" 0 0)
 then
     poweroff
 fi
