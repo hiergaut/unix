@@ -317,7 +317,7 @@ fstab() {
 
     # genfstab -U -p $born | head -n +9 >> $born/etc/fstab
     print_color "genfstab -U -p $born >> $born/etc/fstab" 33
-    genfstab -U -p $born >> $born/etc/fstab
+    genfstab $born >> $born/etc/fstab
 
     # sed -i s/"\/mnt\/"/"\/"/ /mnt/etc/fstab
     # sed -i s/"\/mnt"/"\/ "/ /mnt/etc/fstab
@@ -335,35 +335,38 @@ bootLoader() {
     if is_efi
     then
 
-	##grub efi
-# 	pacstrap $born grub os-prober
-# 	pacstrap $born efibootmgr dosfstools
-#
-# 	mkdir -pv $efi_rep/EFI
-# 	arch-chroot $born /bin/bash << EOF
-# grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
-# grub-mkconfig -o /boot/grub/grub.cfg
-# EOF
+	#grub efi
+	pacstrap $born grub os-prober
+	pacstrap $born efibootmgr dosfstools
 
-	#syslinux efi
+	mkdir -pv $efi_rep/EFI
 	arch-chroot $born /bin/bash << EOF
-pacman -S syslinux dosfstools efibootmgr
-mkdir -p $efi_rep/EFI/syslinux
-cp -r /usr/lib/syslinux/efi64/* $efi_rep/EFI/syslinux
-mount -t efivarfs efivarfs /sys/firmware/efi/efivarfs
-efibootmgr -c -d /dev/sda -p 1 -l /EFI/syslinux/syslinux.efi -L "Syslinux"
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
+grub-mkconfig -o /boot/grub/grub.cfg
 EOF
 
-	# modprobe efivarfs
-	# pacstrap $born efibootmgr
+	#syslinux efi
+# 	pacstrap $born syslinux dosfstools efibootmgr
+# 	mkdir -p $efi_rep/EFI/syslinux
+# 	cp -r $born/usr/lib/syslinux/efi64/* $efi_rep/EFI/syslinux/
+# 	cp $born/boot/syslinux/* $efi_rep/EFI/syslinux/
+#
+# 	arch-chroot $born /bin/bash << EOF
+# mount -t efivarfs efivarfs /sys/firmware/efi/efivarfs
+# efibootmgr -c -d /dev/sda -p 1 -l /EFI/syslinux/syslinux.efi -L "Syslinux"
+# sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
+# EOF
+
+# 	modprobe efivarfs
+# 	pacstrap $born efibootmgr
 # 	id=$(blkid | grep sda2 | awk -F\" '{print $2}')
-#
-#     #     arch-chroot $born /bin/bash << EOF
-#     # cp /boot/intel-ucode.img /boot/efi/EFI/arch/intel-ucode.img
-#     # efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\EFI\arch\vmlinuz-arch.efi" -u "root=UUID=$id rootfstype=ext4 initrd=\EFI\arch\intel-ucode.img initrd=\EFI\arch\initramfs-arch.img rw add_efi_memmap"
-#     # efibootmgr -T
-#     # EOF
-#
+# #
+# # cp /boot/intel-ucode.img /boot/efi/EFI/arch/intel-ucode.img
+#         arch-chroot $born /bin/bash << EOF
+# efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\EFI\arch\vmlinuz-arch.efi" -u "root=UUID=$id rootfstype=ext4 initrd=\EFI\arch\initramfs-arch.img rw"
+# efibootmgr -T
+# EOF
+
 # 	arch-chroot $born /bin/bash << EOF
 # efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\\EFI\\arch\\vmlinuz-linux" -u "root=UUID=$id rootfstype=ext4 initrd=\\EFI\\arch\\initramfs-linux.img rw add_efi_memmap"
 # efibootmgr -T
@@ -481,8 +484,11 @@ chsh -s /bin/zsh
 EOF
     
     zsh_file="/etc/zsh/zshrc"
-    cp -v $zsh_file $born/root/
-    cp -v $zsh_file $born/home/$(cat $temp/addUser)
+    cp -v $zsh_file $born/root/.zshrc
+
+    user_file="$born/home$(cat $temp/addUser)/.zshrc"
+    cp -v $zsh_file $user_file
+    chown gauthier:users $user_file
 }
 
 sudoers() {
