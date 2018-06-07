@@ -391,8 +391,8 @@ rootPasswd() {
     str2="b"
     while [ $str1 != $str2 ]
     do
-	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
     done
     passwd="$str1"
 
@@ -446,8 +446,8 @@ addUser() {
     comment=""
     while [ $str1 != $str2 ]
     do
-	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd $userName  $comment" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd $userName" --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd $userName  $comment" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd $userName" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
 
 	if [ "$str1" == "$(cat $temp/rootPasswd)" ]; then
 	    str1="a"
