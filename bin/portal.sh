@@ -185,14 +185,19 @@ function status() {
     ssh $user@$ip -p $port "cd .common/ && du -hd1"
     echo
     print_color 33 "data list"
-    cd $TREE_REP/
-    for f in $(find -empty | cut -c 1-2 --complement | sort); do
-	if [ -d $f ]; then
-	    print_color "1;34" $f
-	else
-	    echo $f
-	fi
-    done
+
+    if [ "$(ls -A $TREE_REP/)" ]; then
+	cd $TREE_REP/
+	for f in $(find -empty | cut -c 1-2 --complement | sort); do
+	    if [ -d $f ]; then
+		print_color "1;34" $f
+	    else
+		echo $f
+	    fi
+	done
+    else
+	echo "*"
+    fi
 }
 
 
@@ -384,7 +389,7 @@ function merge() {
     if [ -e .portal/backup ]; then
 	cd .portal
 	echo -en "\\033[1;33m"
-	find backup -amin -1
+	find backup -amin -0.1
 	echo -en "\\033[0m"
 	cd ..
     fi
