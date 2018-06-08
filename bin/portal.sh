@@ -10,6 +10,32 @@ DATA_REP=".portal/common/data"
 DEBUG="false"
 
 
+if [ -e /usr/bin/sudo ]; then
+    SUDO="sudo"
+    # print_color 33 "install rsync, passwd sudo"
+    # sudo apt-get install rsync
+else
+    SUDO="su -c"
+    # print_color 33 "install rsync, passwd su"
+    # su -c 'apt-get install rsync'
+fi
+
+case $(cat /etc/os-release | grep '^ID=' | cut --complement -c1-3) in
+    debian)
+	PKG="apt-get install"
+	;;
+    arch)
+	PKG="pacman -Sy"
+	;;
+    *)
+	echo "unknown operating system"
+	;;
+esac
+
+PKG_INSTALL="$SUDO $PKG"
+
+
+
 function print_color() {
     [ $# -eq 2 ] || exit 1
     echo -e "\033[$1"m"$2\033[0m"
@@ -26,13 +52,7 @@ function father() {
 
 if [ ! -e /usr/bin/rsync ]; then
     print_color 33 "install rsync"
-    if [ -e /usr/bin/sudo ]; then
-	print_color 33 "install rsync, passwd sudo"
-	sudo apt-get install rsync
-    else
-	print_color 33 "install rsync, passwd su"
-	su -c 'apt-get install rsync'
-    fi
+    eval "$PKG_INSTALL rsync"
 fi
 # REP_VAR=".portal/var"
 
