@@ -208,10 +208,10 @@ function del() {
     # dir=$(pwd)
     if [ -d $dirFile ]; then
 	rm -rf $TREE_REP/$dirFile
-	rm -rf $DATA_REP/$dirFile
+	# rm -rf $DATA_REP/$dirFile
     else
 	rm -f $TREE_REP/$dirFile
-	rm -f $DATA_REP/$dirFile
+	# rm -f $DATA_REP/$dirFile
     fi
     print_color "1;32" "successfuly deleted"
 }

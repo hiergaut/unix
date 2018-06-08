@@ -1,5 +1,7 @@
 #! /bin/bash -e
 
+start=$(date +%s)
+
 bar() {
     tailleBar=$(expr $(tput cols) - 4) || sleep 0
 
@@ -73,7 +75,7 @@ print_color() {
 is_efi() {
     if [ -d /sys/firmware/efi/ ]
     then
-	print_color "EFI DETECTED" "1;33"
+	print_color "EFI DETECTED" "1;32"
 	return 0
     else
 	return 1
@@ -210,6 +212,7 @@ format() {
     fi
 
     fdisk -l $device
+    print_color "fdisk -l $device" 33
     echo "$device" > $temp/format
 }
 
@@ -277,13 +280,13 @@ mirror() {
     # pacman-mirrors -g
     if ! rankmirrors > /dev/null; then
 	mount -o remount,size=4G /run/archiso/cowspace
-	pacman -S pacman-contrib
+	pacman -Sy --noconfirm pacman-contrib
     fi
 
+    print_color "create new file '/etc/pacman.d/mirrorlist' by rankmirrors" 33
     rankmirrors $file -v | tee /tmp/minimal/rank
     mv /tmp/minimal/rank $file
 
-    print_color "new file '/etc/pacman.d/mirrorlist' by rankmirrors" 33
     # fi
 }
 
@@ -526,7 +529,7 @@ sudoers() {
 }
 
 wifi() {
-    print_color "WIFI DECTECED ON THIS MACHINE" "1;33"
+    print_color "WIFI DECTECED ON THIS MACHINE" "1;32"
     if iwconfig 2>&1 | grep ESSID | grep -v off > /dev/null
     then
 	print_color "install wifi package for a post install"
@@ -575,8 +578,12 @@ do
 done
 
 # rm -r /tmp/minimal/
+end=$(date +%s)
+diff=$(echo $end - $start | bc)
+min=$(echo "$diff / 60" | bc)
+sec=$(echo "$diff % 60" | bc)
 
-if ($DIALOG --backtitle "$appTitle" --title "Shutdown" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n                   Poweroff now ?" 0 0)
+if ($DIALOG --backtitle "$appTitle" --title "Shutdown (install duration : $min:$sec min)" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n                   Poweroff now ?" 0 0)
 then
     poweroff
 fi
