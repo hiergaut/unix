@@ -73,7 +73,7 @@ print_color() {
 is_efi() {
     if [ -d /sys/firmware/efi/ ]
     then
-	print_color "EFI" "1;33"
+	print_color "EFI DETECTED" "1;33"
 	return 0
     else
 	return 1
@@ -140,93 +140,105 @@ timeZone() {
 }
 
 format() {
+
+    items=$(lsblk | grep disk | awk '{print $1}' | sort)
+    options=()
+    for item in $items; do
+	options+=("$item" "")
+    done
+    # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
+    device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "" 0 0 0 \
+	"${options[@]}" \
+	3>&1 1>&2 2>&3)
+
+    device="/dev/$device"
+
+
     if is_efi
     then
-	# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "/dev/sda1   512M   EFI System\n/dev/sda2   40G    Linux filesystem\n/dev/sda3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
+	# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
+	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno $device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
 	then
-	    echo -e "\\033[33mparted /dev/sda mklabel gpt\\033[0m"
-	    parted /dev/sda mklabel gpt -ms
-	    echo -e "\\033[33mparted /dev/sda mkpart ESP fat32 1MiB 513Mib\\033[0m"
-	    parted /dev/sda mkpart ESP fat32 1MiB 513Mib -ms
-	    echo -e "\\033[33mparted /dev/sda set 1 boot on\\033[0m"
-	    parted /dev/sda set 1 boot on -ms
+	    echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
+	    parted $device mklabel gpt -ms
+	    echo -e "\\033[33mparted $device mkpart ESP fat32 1MiB 513Mib\\033[0m"
+	    parted $device mkpart ESP fat32 1MiB 513Mib -ms
+	    echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
+	    parted $device set 1 boot on -ms
 	    echo
 
-	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 513Mib 40.5Gib\\033[0m"
-	    parted /dev/sda mkpart primary ext4 513Mib 40.5Gib -ms
+	    echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
+	    parted $device mkpart primary ext4 513Mib 40.5Gib -ms
+
+	    echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
+	    parted $device mkpart primary ext4 40.5Gib 100% -ms
 	    echo
 
-	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 40.5Gib 100%\\033[0m"
-	    parted /dev/sda mkpart primary ext4 40.5Gib 100% -ms
-	    echo
-	    echo
-
-	    echo -e "\\033[33mmkfs.vfat -F32 /dev/sda1\\033[0m"
-	    mkfs.vfat -F32 /dev/sda1 <<< y
-	    echo -e "\\033[33mmkfs.ext4 /dev/sda2\\033[0m"
-	    mkfs.ext4 /dev/sda2 <<< y
-	    echo -e "\\033[33mmkfs.ext4 /dev/sda3\\033[0m"
-	    mkfs.ext4 /dev/sda3 <<< y
+	    echo -e "\\033[33mmkfs.vfat -F32 "$device"1\\033[0m"
+	    mkfs.vfat -F32 "$device"1 <<< y
+	    echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
+	    mkfs.ext4 "$device"2 <<< y
+	    echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
+	    mkfs.ext4 "$device"3 <<< y
 	else
 	    return 1
 	fi
     else
-	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "/dev/sda1   512M   Linux\n/dev/sda2   40G    Linux\n/dev/sda3   *G     Linux\n\n\n             Commit ?" 0 0)
+	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno ""$device"1   512M   Linux\n"$device"2   40G    Linux\n"$device"3   *G     Linux\n\n\n             Commit ?" 0 0)
 	then
-	    echo -e "\\033[33mparted /dev/sda mklabel dos\\033[0m"
-	    parted /dev/sda mklabel msdos -ms
-	    echo -e "\\033[33mparted /dev/sda mkpart ext2 1MiB 513Mib\\033[0m"
-	    parted /dev/sda mkpart primary ext2 1MiB 513Mib -ms
-	    echo -e "\\033[33mparted /dev/sda set 1 boot on\\033[0m"
-	    parted /dev/sda set 1 boot on -ms
-	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 513Mib 40.5Gib\\033[0m"
-	    parted /dev/sda mkpart primary ext4 513Mib 40.5Gib -ms
-	    echo -e "\\033[33mparted /dev/sda mkpart primary ext4 40.5Gib 100%\\033[0m"
-	    parted /dev/sda mkpart primary ext4 40.5Gib 100% -ms
+	    echo -e "\\033[33mparted $device mklabel dos\\033[0m"
+	    parted $device mklabel msdos -ms
+	    echo -e "\\033[33mparted $device mkpart ext2 1MiB 513Mib\\033[0m"
+	    parted $device mkpart primary ext2 1MiB 513Mib -ms
+	    echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
+	    parted $device set 1 boot on -ms
+	    echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
+	    parted $device mkpart primary ext4 513Mib 40.5Gib -ms
+	    echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
+	    parted $device mkpart primary ext4 40.5Gib 100% -ms
 	    echo
 
-	    echo -e "\\033[33mmkfs.ext2 /dev/sda1\\033[0m"
-	    mkfs.ext2 /dev/sda1 <<< y
-	    echo -e "\\033[33mmkfs.ext4 /dev/sda2\\033[0m"
-	    mkfs.ext4 /dev/sda2 <<< y
-	    echo -e "\\033[33mmkfs.ext4 /dev/sda3\\033[0m"
-	    mkfs.ext4 /dev/sda3 <<< y
+	    echo -e "\\033[33mmkfs.ext2 "$device"1\\033[0m"
+	    mkfs.ext2 "$device"1 <<< y
+	    echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
+	    mkfs.ext4 "$device"2 <<< y
+	    echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
+	    mkfs.ext4 "$device"3 <<< y
 	else
 	    return 1
 	fi
     fi
+
+    fdisk -l $device
+    echo "$device" > $temp/format
 }
 
 mounting() {
+    device=$(cat $temp/format)
+
     if is_efi
     then
-	mount -v /dev/sda2 $born #root
+	mount -v "$device"2 $born #root
 
 	mkdir -v $born/home
-	mount -v /dev/sda3 $born/home/
+	mount -v "$device"3 $born/home/
 
 	mkdir -pv $efi_rep
-	mount -t vfat /dev/sda1 $efi_rep
+	mount -t vfat "$device"1 $efi_rep
 	# mkdir -v $born/esp
-	# mount -v /dev/sda1 $born/esp/
+	# mount -v "$device"1 $born/esp/
 	# mkdir -pv $born/esp/EFI/arch/
 	# mount -v --bind $born/esp/EFI/arch/ $born/boot/
     else
-	mount -v /dev/sda2 $born
+	mount -v "$device"2 $born
 	mkdir -v $born/home
 	mkdir -v $born/boot
-	mount -v /dev/sda1 $born/boot/
-	mount -v /dev/sda3 $born/home/
+	mount -v "$device"1 $born/boot/
+	mount -v "$device"3 $born/home/
     fi
 
     print_color "df" 33
-    df
-}
-
-update() {
-    mount -o remount,size=4G /run/archiso/cowspace
-    pacman -Syu pacman-contrib
+    df | grep -E "$|$device"
 }
 
 mirror() {
@@ -263,15 +275,21 @@ mirror() {
     done
 
     # pacman-mirrors -g
-    # if rankmirrors > /dev/null; then
+    if ! rankmirrors > /dev/null; then
+	mount -o remount,size=4G /run/archiso/cowspace
+	pacman -S pacman-contrib
+    fi
+
     rankmirrors $file -v | tee /tmp/minimal/rank
     mv /tmp/minimal/rank $file
+
+    print_color "new file '/etc/pacman.d/mirrorlist' by rankmirrors" 33
     # fi
 }
 
 base() {
     print_color "install base base-devel" 33
-    pacstrap $born base base-devel
+    time pacstrap $born base base-devel
 
     #optional
     # pacstrap $born openssh zsh rsync wget dialog vim
@@ -332,6 +350,8 @@ fstab() {
 
 bootLoader() {
     #TODO syslinux
+    device=$(cat $temp/format)
+
     if is_efi
     then
 
@@ -339,9 +359,13 @@ bootLoader() {
 	pacstrap $born grub os-prober
 	pacstrap $born efibootmgr dosfstools
 
+	grub_file="/etc/default/grub"
+
 	mkdir -pv $efi_rep/EFI
 	arch-chroot $born /bin/bash << EOF
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
+cp -v $grub_file $grub_file.default
+sed -i s/"GRUB_TIMEOUT=5"/"GRUB_TIMEOUT=0"/ $grub_file
 grub-mkconfig -o /boot/grub/grub.cfg
 EOF
 
@@ -353,22 +377,22 @@ EOF
 #
 # 	arch-chroot $born /bin/bash << EOF
 # mount -t efivarfs efivarfs /sys/firmware/efi/efivarfs
-# efibootmgr -c -d /dev/sda -p 1 -l /EFI/syslinux/syslinux.efi -L "Syslinux"
+# efibootmgr -c -d "$device" -p 1 -l /EFI/syslinux/syslinux.efi -L "Syslinux"
 # sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
 # EOF
 
 # 	modprobe efivarfs
 # 	pacstrap $born efibootmgr
-# 	id=$(blkid | grep sda2 | awk -F\" '{print $2}')
+# 	id=$(blkid | "$device"2 | awk -F\" '{print $2}')
 # #
 # # cp /boot/intel-ucode.img /boot/efi/EFI/arch/intel-ucode.img
 #         arch-chroot $born /bin/bash << EOF
-# efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\EFI\arch\vmlinuz-arch.efi" -u "root=UUID=$id rootfstype=ext4 initrd=\EFI\arch\initramfs-arch.img rw"
+# efibootmgr -c -g -d "$device" -p 1 -L "Arch Linux" -l "\EFI\arch\vmlinuz-arch.efi" -u "root=UUID=$id rootfstype=ext4 initrd=\EFI\arch\initramfs-arch.img rw"
 # efibootmgr -T
 # EOF
 
 # 	arch-chroot $born /bin/bash << EOF
-# efibootmgr -c -g -d /dev/sda -p 1 -L "Arch Linux" -l "\\EFI\\arch\\vmlinuz-linux" -u "root=UUID=$id rootfstype=ext4 initrd=\\EFI\\arch\\initramfs-linux.img rw add_efi_memmap"
+# efibootmgr -c -g -d "$device" -p 1 -L "Arch Linux" -l "\\EFI\\arch\\vmlinuz-linux" -u "root=UUID=$id rootfstype=ext4 initrd=\\EFI\\arch\\initramfs-linux.img rw add_efi_memmap"
 # efibootmgr -T
 # EOF
 
@@ -378,7 +402,7 @@ EOF
 	arch-chroot $born /bin/bash << EOF
 syslinux-install_update -im
 sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
-sed -i s/"APPEND root=\/dev\/sda3 rw"/"APPEND root=\/dev\/sda2 rw"/ /boot/syslinux/syslinux.cfg
+sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
 EOF
     fi
 }
@@ -479,16 +503,19 @@ zsh() {
 chsh -s /bin/zsh
 EOF
 " 33
-    arch-chroot $born /bin/sh << EOF
+    arch-chroot $born /bin/bash << EOF
 chsh -s /bin/zsh
 EOF
     
     zsh_file="/etc/zsh/zshrc"
     cp -v $zsh_file $born/root/.zshrc
 
-    user_file="$born/home$(cat $temp/addUser)/.zshrc"
-    cp -v $zsh_file $user_file
-    chown gauthier:users $user_file
+    user_file="home/$(cat $temp/addUser)/.zshrc"
+
+    cp -v $zsh_file $born/$user_file
+    arch-chroot $born /bin/bash << EOF
+chown gauthier:users /$user_file
+EOF
 }
 
 sudoers() {
@@ -499,6 +526,7 @@ sudoers() {
 }
 
 wifi() {
+    print_color "WIFI DECTECED ON THIS MACHINE" "1;33"
     if iwconfig 2>&1 | grep ESSID | grep -v off > /dev/null
     then
 	print_color "install wifi package for a post install"
@@ -517,7 +545,6 @@ for function in \
     timeZone \
     format \
     mounting \
-    update \
     mirror \
     base \
     mirror2 \

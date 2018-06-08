@@ -144,9 +144,9 @@ function pull() {
 function status() {
     print_color 33 "url server"
     echo "$user@$ip:$port"
-    # echo
-    # echo -e "\033[33mportal list\033[0m"
-    # ssh $user@$ip -p $port ls .portal/ | grep -v backup | grep -v var | grep -v common
+    echo
+    echo -e "\033[33mportal list\033[0m"
+    ssh $user@$ip -p $port ls .common/ | grep -v backup
     echo
     print_color 33 "data list"
     cd $TREE_REP/
