@@ -22,10 +22,10 @@ fi
 
 case $(cat /etc/os-release | grep '^ID=' | cut --complement -c1-3) in
     debian)
-	PKG="apt-get install"
+	PKG="apt-get -y install"
 	;;
     arch)
-	PKG="pacman -Sy"
+	PKG="pacman --noconfirm -Sy"
 	;;
     *)
 	echo "unknown operating system"
@@ -53,6 +53,11 @@ function father() {
 if [ ! -e /usr/bin/rsync ]; then
     print_color 33 "install rsync"
     eval "$PKG_INSTALL rsync"
+fi
+
+if [ ! -e /usr/bin/ssh ]; then
+    print_color 33 "install openssh"
+    eval "$PKG_INSTALL openssh"
 fi
 # REP_VAR=".portal/var"
 
@@ -144,7 +149,12 @@ function push() {
     fi
 
     # echo "rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.portal/"$repoName"/"
-    rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.common/"$repoName"/
+    if [ "$(ls -A $TREE_REP/)" ]; then
+	rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/ "$user"@"$ip":~/.common/"$repoName"/
+    else
+	rsync -arvu -e "ssh -p $port" $option --backup "$backup" --exclude ".portal/" ./ "$user"@"$ip":~/.common/"$repoName"/data/
+	rsync -arvu -e "ssh -p $port" $option --backup "$backup" .portal/common/tree/ "$user"@"$ip":~/.common/"$repoName"/tree/
+    fi
 }
 
 function pull() {
@@ -154,7 +164,12 @@ function pull() {
     backup="--backup-dir=../backup/"
 
     # echo "rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.portal/"$repoName"/ .portal/common/"
-    rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.common/"$repoName"/ .portal/common/
+    if [ "$(ls -A $TREE_REP/)" ]; then
+	rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.common/"$repoName"/ .portal/common/
+    else
+	rsync -arvu -e "ssh -p $port" --delete --backup $backup --exclude ".portal/" $user@$ip:~/.common/"$repoName"/data/ ./
+	rsync -arvu -e "ssh -p $port" --delete --backup $backup $user@$ip:~/.common/"$repoName"/tree/ .portal/common/tree/
+    fi
 
     # echo -e "\\033[1;33m"
     # find ../backup -amin 1
@@ -166,7 +181,8 @@ function status() {
     echo "$user@$ip:$port"
     echo
     echo -e "\033[33mportal list\033[0m"
-    ssh $user@$ip -p $port ls .common/ | grep -v backup
+    # ssh $user@$ip -p $port ls .common/ | grep -v backup
+    ssh $user@$ip -p $port "cd .common/ && du -hd1"
     echo
     print_color 33 "data list"
     cd $TREE_REP/
@@ -183,63 +199,70 @@ function status() {
 #TODO : vararg argument
 function add() {
     # echo "$dirRootSuppressed"
-    dirFile="$dirRootSuppressed""$1"
-    # absolute="$repoName/$dirFile"
-    # print_color 33 "dirFile : $dirFile"
-    if [ $# -ne 1 ]; then
-	echo "usage: $0 add file|repository" 2>&1
+    if [ $# -eq 0 ]; then
+	echo "usage: portal add file|repository" 2>&1
 	exit 4
     fi
 
-    # dir=$(pwd)
-    if [ -e $TREE_REP/$dirFile ]; then
-	print_color "1;33" "'tree/$dirFile' already exist"
-	exit 0
-    fi
+    for f in $*; do
+	dirFile="$dirRootSuppressed""$f"
+	# absolute="$repoName/$dirFile"
+	# print_color 33 "dirFile : $dirFile"
 
-    if [ ! -e $dirFile ]; then
-	print_color "1;31" "'$dirFile' not exist in your filesystem"
-	exit 1
-    fi
+	# dir=$(pwd)
+	if [ -e $TREE_REP/$dirFile ]; then
+	    print_color "1;33" "'tree/$dirFile' already exist"
+	    continue
+	fi
 
-    if [ -d $dirFile ]; then
-	# mkdir -pv $TREE_REP/$1
-	mkdir -p $TREE_REP/$dirFile
-    else
-	touch $TREE_REP/$dirFile
-    fi
-    print_color "1;32" "successfuly added in tree/$dirFile"
+	if [ ! -e $dirFile ]; then
+	    print_color "1;31" "'$dirFile' not exist in your filesystem"
+	    exit 1
+	fi
+
+	if [ -d $dirFile ]; then
+	    # mkdir -pv $TREE_REP/$1
+	    mkdir -p $TREE_REP/$dirFile
+	else
+	    touch $TREE_REP/$dirFile
+	fi
+	print_color "1;32" "tree/$dirFile successfuly added"
+    done
 }
 
-function del() {
-    dirFile="$dirRootSuppressed""$1"
-    # absolute="$repoName/$dirFile"
-    # print_color 33 "dirFile : $dirFile"
 
-    if [ $# -ne 1 ]; then
-	echo "usage: $0 del file|repository" 2>&1
+function del() {
+    if [ $# -eq 0 ]; then
+	echo "usage: portal del file|repository" 2>&1
 	exit 4
     fi
 
-    if [ ! -e $TREE_REP/$dirFile ]; then
-	print_color "1;33" "'tree/$dirFile' not exist"
-	exit 0
-    fi
-    # dir=$(pwd)
-    if [ -d $dirFile ]; then
-	rm -rf $TREE_REP/$dirFile
-	# rm -rf $DATA_REP/$dirFile
-    else
-	rm -f $TREE_REP/$dirFile
-	# rm -f $DATA_REP/$dirFile
-    fi
-    print_color "1;32" "successfuly deleted"
+    for f in $*; do
+	dirFile="$dirRootSuppressed""$f"
+	# absolute="$repoName/$dirFile"
+	# print_color 33 "dirFile : $dirFile"
+
+
+	if [ ! -e $TREE_REP/$dirFile ]; then
+	    print_color "1;33" "'tree/$dirFile' not exist"
+	    continue
+	fi
+	# dir=$(pwd)
+	if [ -d $dirFile ]; then
+	    rm -rf $TREE_REP/$dirFile
+	    rm -rf $DATA_REP/$dirFile
+	else
+	    rm -f $TREE_REP/$dirFile
+	    rm -f $DATA_REP/$dirFile
+	fi
+	print_color "1;32" "tree/$dirFile successfuly deleted"
+    done
 }
 
 function merge() {
     if [ $# -ne 1 ]
     then
-	echo "usage: $0 merge branch|master" 2>&1
+	echo "usage: portal merge branch|master" 2>&1
 	exit 3
     fi
 
@@ -386,64 +409,92 @@ function sync() {
 
     if [ $# -ne 1 ]
     then
-	echo "usage: sync in|out" 2>&1
+	echo "usage: portal sync in|out" 2>&1
 	exit 1
     fi
 
 
-    if ! $safe
-    then
-	# own_bar "sync out"
-	# own_barStatus "safe mode" 31
+    if [ "$(ls -A $TREE_REP/)" ]; then
+	if ! $safe
+	then
+	    # own_bar "sync out"
+	    # own_barStatus "safe mode" 31
 
-	# merge branch > /dev/null
-	merge branch
-	# own_common_merge branch
+	    # merge branch > /dev/null
+	    merge branch
+	    # own_common_merge branch
 
-	print_color "1;31" "bad last sync"
-	print_color 33 "safe push"
-	push
-	# own_common_push safe
+	    print_color "1;31" "bad last sync"
+	    print_color 33 "safe push"
+	    push
+	    # own_common_push safe
 
-	print_color 32 "pull"
-	pull
+	    print_color 32 "pull"
+	    pull
 
-	# merge master > /dev/null
-	merge master
-
-
-    elif [ $1 = "out" ]
-    then
-	# own_bar "sync out"
-
-	# merge branch > /dev/null
-	merge branch
-
-	push
-	# own_common_push safe
+	    # merge master > /dev/null
+	    merge master
 
 
-    elif [ $1 = "in" ]
-    then
-	# own_bar "sync in"
+	elif [ $1 = "out" ]
+	then
+	    # own_bar "sync out"
 
-	# temp="/tmp/temp.txt"
-	# own_common_pull $option > $temp
-	pull
+	    # merge branch > /dev/null
+	    merge branch
 
-	# cat $temp
+	    push
+	    # own_common_push safe
 
-	# merge master > /dev/null
-	merge master
 
-	# cat $temp
-	# rm $temp
+	elif [ $1 = "in" ]
+	then
+	    # own_bar "sync in"
+
+	    # temp="/tmp/temp.txt"
+	    # own_common_pull $option > $temp
+	    pull
+
+	    # cat $temp
+
+	    # merge master > /dev/null
+	    merge master
+
+	    # cat $temp
+	    # rm $temp
+
+	else
+	    echo "unknown parameter" 2>&1
+	    exit 1
+	fi
 
     else
-	echo "unknown parameter" 2>&1
-	exit 1
-    fi
+	# empty tree, sync all file
+	if ! $safe
+	then
+	    print_color "1;31" "bad last sync"
+	    print_color 33 "safe push"
+	    push
 
+	    print_color 32 "pull"
+	    pull
+
+
+	elif [ $1 = "out" ]
+	then
+	    push
+	    # own_common_push safe
+
+
+	elif [ $1 = "in" ]
+	then
+	    pull
+
+	else
+	    echo "unknown parameter" 2>&1
+	    exit 1
+	fi
+    fi
     # own_barStatus "sync ok"
     # touch -r "$HOME/var/$(cat /etc/hostname)" $lastSync
     # touch $lastSync
@@ -510,8 +561,8 @@ if [ $# -eq 0 ]; then
     echo "usage: portal <command> [<args>]"
     echo
     echo "command:"
-    echo "    init               open portal on current repository"
-    echo "    sync in|out        synchronize your data to the server"
+    echo "    init                   open portal on current repository"
+    echo "    sync in|out            synchronize your data to the server"
     echo "        +----------+              +----------+              +----------+"
     echo "        |          |      out     |          |      in      |  other   |"
     echo "        |  portal  |  --------->  |  server  |  --------->  |  portal  |"
@@ -519,12 +570,11 @@ if [ $# -eq 0 ]; then
     echo "        ............      in      +----------+      out     ............"
     echo "            .portal/                ~/.common/                  .portal/"
     echo
-    echo "    add <filename>     add sync file or repository"
-    echo "    del <filename>     delete sync file or repository"
-    echo "    status             show status"
-    echo "    clean              clean backup and hide file in common/data"
-    echo "    save               save all common file on server to external disk"
-    echo "    safe               sync in not safe mode, when two portal are open as same time"
+    echo "    add|del <filename>     add|del sync file or repository"
+    echo "    status                 show status"
+    echo "    clean                  clean backup and hide file in common/data"
+    echo "    save                   save all common file on server to external disk"
+    echo "    safe                   sync in not safe mode, when two portal are open as same time"
 
 	
     exit 0
@@ -637,11 +687,13 @@ case $1 in
 	;;
 
     "add")
-	add $2
+	shift
+	add $*
 	;;
 
     "del")
-	del $2
+	shift
+	del $*
 	;;
 
     "sync")
