@@ -149,7 +149,7 @@ format() {
 	options+=("$item" "")
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-    device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "" 0 0 0 \
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(lsblk)" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -159,7 +159,7 @@ format() {
     if is_efi
     then
 	# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno $device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
+	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
 	    parted $device mklabel gpt -ms
@@ -211,8 +211,8 @@ format() {
 	fi
     fi
 
-    fdisk -l $device
     print_color "fdisk -l $device" 33
+    fdisk -l $device
     echo "$device" > $temp/format
 }
 
@@ -278,7 +278,7 @@ mirror() {
     done
 
     # pacman-mirrors -g
-    if ! rankmirrors > /dev/null; then
+    if ! rankmirrors > /dev/null 2>&1; then
 	mount -o remount,size=4G /run/archiso/cowspace
 	pacman -Sy --noconfirm pacman-contrib
     fi
@@ -297,7 +297,7 @@ base() {
     #optional
     # pacstrap $born openssh zsh rsync wget dialog vim
     print_color "install wget to post possible download script"
-    pacstrap $born wget # to download post script installation
+    pacstrap $born wget openssh rsync# to download post script installation
 }
 
 mirror2() {
@@ -309,11 +309,12 @@ hostname() {
     # cp -v $born/etc/hostname $born/etc/hostname.default
     # cat $born/etc/hostname
 
+    vendor=$(cat /sys/devices/virtual/dmi/id/sys_vendor | awk '{print $1}' | tr '[A-Z]' '[a-z]')
     host=""
     while [ -z $host ]
     do
 	# host=$($DIALOG --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 40 "" 3>&1 1>&2 2>&3)
-	host=$($DIALOG --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	host=$($DIALOG --backtitle "$appTitle" --title "Hostname" --inputbox "" 0 0 "$vendor" 3>&1 1>&2 2>&3)
     done
     # cp -v $born/etc/hostname $born/etc/hostname.default
     echo $host > $born/etc/hostname
@@ -482,10 +483,10 @@ addUser() {
 	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd $userName  $comment" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
 	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd $userName" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
 
-	if [ "$str1" == "$(cat $temp/rootPasswd)" ]; then
-	    str1="a"
-	    comment="(no same passwd as root)"
-	fi
+	# if [ "$str1" == "$(cat $temp/rootPasswd)" ]; then
+	#     str1="a"
+	#     comment="(no same passwd as root)"
+	# fi
     done
     passwd="$str1"
 
@@ -513,12 +514,11 @@ EOF
     zsh_file="/etc/zsh/zshrc"
     cp -v $zsh_file $born/root/.zshrc
 
-    user_file="home/$(cat $temp/addUser)/.zshrc"
-
-    cp -v $zsh_file $born/$user_file
-    arch-chroot $born /bin/bash << EOF
-chown gauthier:users /$user_file
-EOF
+#     user_file="home/$(cat $temp/addUser)/.zshrc"
+#     cp -v $zsh_file $born/$user_file
+#     arch-chroot $born /bin/bash << EOF
+# chown gauthier:users /$user_file
+# EOF
 }
 
 sudoers() {
@@ -553,8 +553,7 @@ for function in \
     mirror2 \
     hostname \
     fstab \
-    bootLoader \
-    rootPasswd \
+    bootLoader \ #rootPasswd \
     timeZone2 \
     locale \
     keyboard2 \
