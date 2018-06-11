@@ -1,5 +1,7 @@
 #! /bin/bash -e
 
+#TODO auto create wpa with wifi-menu conf
+
 start=$(date +%s)
 
 bar() {
@@ -297,7 +299,7 @@ base() {
     #optional
     # pacstrap $born openssh zsh rsync wget dialog vim
     print_color "install wget to post possible download script"
-    pacstrap $born wget openssh rsync# to download post script installation
+    pacstrap $born wget openssh rsync neovim# to download post script installation
 }
 
 mirror2() {
@@ -535,7 +537,25 @@ wifi() {
 	print_color "install wifi package for a post install"
 	# pacstrap $born wireless_tools wpa_supplicant dialog
 	pacstrap $born wpa_supplicant dialog
-	cp -v /etc/netctl/wlp* $born/etc/netctl/
+	# cp -v /etc/netctl/wlp* $born/etc/netctl/
+	f="/etc/netctl/wlp*"
+
+	interface=$(cat $f | grep Interface | awk -F= '{print $2}')
+
+	echo "ctrl_interface=/var/run/wpa_supplicant
+update_config=1
+
+network={
+    ssid=\"$(cat $f | grep ESSID | awk -F= '{print $2}')\"
+    psk=\"$(cat $f | grep Key | awk -F= '{print $2}')\"
+}" > "$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
+
+    	arch-chroot $born /bin/bash << EOF
+systemctl enable dhcpcd
+systemctl enable wpa_supplicant@$interface
+EOF
+
+
     fi
 }
 
@@ -553,7 +573,7 @@ for function in \
     mirror2 \
     hostname \
     fstab \
-    bootLoader \ #rootPasswd \
+    bootLoader \
     timeZone2 \
     locale \
     keyboard2 \
@@ -571,8 +591,8 @@ do
 	barStatus "$function : done" 32
 	# sleep 1
 	# optional
-	read
 	touch "/tmp/minimal/$function"
+	read
     fi
 done
 
