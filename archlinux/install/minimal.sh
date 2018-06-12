@@ -1,8 +1,8 @@
 #! /bin/bash -e
 
-#TODO auto create wpa with wifi-menu conf
+#TODO auto find country with capital for mirror
+#TODO auto select your country for timezone
 
-start=$(date +%s)
 
 bar() {
     tailleBar=$(expr $(tput cols) - 4) || sleep 0
@@ -91,6 +91,9 @@ efi_rep="$born/boot/efi"
 DIALOG=${DIALOG=dialog}
 
 mkdir -pv $temp
+if [ ! -e $temp/start ]; then
+    echo $(date +%s) > $temp/start
+fi
 
 keyboard() {
     # items=$(localectl list-keymaps)
@@ -100,7 +103,7 @@ keyboard() {
 	options+=("$item" "")
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 0 0 0 \
+    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "dvorak-programmer" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -115,7 +118,7 @@ timeZone() {
     for item in $items; do
 	options+=("$item" "")
     done
-    timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
+    timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "Europe" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
     if [ ! "$?" = "0" ]; then
@@ -129,7 +132,7 @@ timeZone() {
 	options+=("$item" "")
     done
     # timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
-    timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
+    timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "Paris" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -144,14 +147,13 @@ timeZone() {
 }
 
 format() {
-
     items=$(lsblk | grep disk | awk '{print $1}' | sort)
     options=()
     for item in $items; do
 	options+=("$item" "")
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(lsblk)" 0 0 0 \
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "\n$(lsblk)\n" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -161,7 +163,7 @@ format() {
     if is_efi
     then
 	# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n              Commit ?" 0 0)
+	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem (root)\n"$device"3   *G     Linux filesystem (/home)\n\n\n                Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
 	    parted $device mklabel gpt -ms
@@ -260,7 +262,7 @@ mirror() {
 	options+=("$item" "")
     done
     # country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
-    country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 0 0 0 \
+    country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "France" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -293,13 +295,24 @@ mirror() {
 }
 
 base() {
+    start=$(date +%s)
+
+
     print_color "install base base-devel" 33
-    time pacstrap $born base base-devel
+    # time pacstrap $born base base-devel
+    pacstrap $born base base-devel
 
     #optional
     # pacstrap $born openssh zsh rsync wget dialog vim
     print_color "install wget to post possible download script"
-    pacstrap $born wget openssh rsync neovim# to download post script installation
+    pacstrap $born wget openssh rsync neovim # to download post script installation
+
+
+    end=$(date +%s)
+    diff=$(echo $end - $(cat $temp/start) | bc)
+    min=$(echo "$diff / 60" | bc)
+    sec=$(echo "$diff % 60" | bc)
+    print_color "total base install time : $min:$sec min" "1;32"
 }
 
 mirror2() {
@@ -326,7 +339,8 @@ hostname() {
     # cp -v $born/etc/hosts $born/etc/hosts.default
     # # cat $born/etc/hosts
     #
-    # echo -e "127.0.0.1\t$hostname.localdomain\t$hostname" >> $born/etc/hosts
+    # echo -e "127.0.0.1\t$host.localdomain\t$hostname" >> $born/etc/hosts
+    echo -e "127.0.0.1\t$host" >> $born/etc/hosts
     # cat $born/etc/hosts
 }
 
@@ -355,7 +369,6 @@ fstab() {
 }
 
 bootLoader() {
-    #TODO syslinux
     device=$(cat $temp/format)
 
     if is_efi
@@ -439,12 +452,14 @@ EOF
 
 timeZone2() {
     # cp $born/etc/localtime $born/etc/localtime.default
+
     print_color "ln -vfs /usr/share/zoneinfo/$(cat $temp/timeZone) $born/etc/localtime" 33
     ln -vfs /usr/share/zoneinfo/$(cat $temp/timeZone) $born/etc/localtime
-#     arch-chroot $born /bin/sh << EOF
-# timedatectl set-ntp true
-# timedatectl set-timezone $timezone
-# EOF
+
+    arch-chroot $born /bin/bash << EOF
+timedatectl set-ntp true
+timedatectl set-timezone $(cat $temp/timeZone)
+EOF
 }
 
 locale() {
@@ -452,9 +467,20 @@ locale() {
     # exit 1
     # cp $born/etc/locale.gen $born/etc/locale.gen.default
     cp /etc/locale.gen $born/etc/locale.gen
+    sed -i 's/#en_US ISO-8859-1/en_US ISO-8859-1/' $born/etc/locale.gen
+
+#     echo 'LANG="en-US.UTF-8"
+# LANGUAGE="en_US"
+# LC_COLLATE=C' > $born/etc/locale.conf
+
     arch-chroot $born locale-gen
-    #TODO echo LANG="en-US.UTF-8" > /etc/locale.conf
-    echo 'LANG="en-US.UTF-8"' > $born/etc/locale.conf
+
+#     arch-chroot $born /bin/bash << EOF
+# cd /tmp
+# curl -o locale-check.sh http://ix.io/ksS
+# bash locale-check.sh
+# EOF
+
 }
 
 keyboard2() {
@@ -516,11 +542,12 @@ EOF
     zsh_file="/etc/zsh/zshrc"
     cp -v $zsh_file $born/root/.zshrc
 
-#     user_file="home/$(cat $temp/addUser)/.zshrc"
-#     cp -v $zsh_file $born/$user_file
-#     arch-chroot $born /bin/bash << EOF
-# chown gauthier:users /$user_file
-# EOF
+    user_file="home/$(cat $temp/addUser)/.zshrc"
+    cp -v $zsh_file $born/$user_file
+    touch -m -t 0001010000 $born/$user_file #for post sync, to avoid erase your personal .zshrc 
+    arch-chroot $born /bin/bash << EOF
+chown gauthier:users /$user_file
+EOF
 }
 
 sudoers() {
@@ -536,7 +563,8 @@ wifi() {
     then
 	print_color "install wifi package for a post install"
 	# pacstrap $born wireless_tools wpa_supplicant dialog
-	pacstrap $born wpa_supplicant dialog
+	# pacstrap $born wpa_supplicant dialog #for wifi-menu
+	pacstrap $born wpa_supplicant
 	# cp -v /etc/netctl/wlp* $born/etc/netctl/
 	f="/etc/netctl/wlp*"
 
@@ -549,6 +577,8 @@ network={
     ssid=\"$(cat $f | grep ESSID | awk -F= '{print $2}')\"
     psk=\"$(cat $f | grep Key | awk -F= '{print $2}')\"
 }" > "$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
+
+	chmod 600 $born/etc/wpa_supplicant/wpa_supplicant-$interface.conf
 
     	arch-chroot $born /bin/bash << EOF
 systemctl enable dhcpcd
@@ -598,11 +628,11 @@ done
 
 # rm -r /tmp/minimal/
 end=$(date +%s)
-diff=$(echo $end - $start | bc)
+diff=$(echo $end - $(cat $temp/start) | bc)
 min=$(echo "$diff / 60" | bc)
 sec=$(echo "$diff % 60" | bc)
 
-if ($DIALOG --backtitle "$appTitle" --title "Shutdown (install duration : $min:$sec min)" --yesno "Please remove the usb key from the live cd before restarting the machine\n\n\n                   Poweroff now ?" 0 0)
+if ($DIALOG --backtitle "$appTitle" --title "Shutdown (install duration : $min:$sec min)" --yesno "\nPlease remove the usb key from the live cd before restarting the machine\n\n\n                   Poweroff now ?" 0 0)
 then
     poweroff
 fi
