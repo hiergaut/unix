@@ -95,7 +95,7 @@ if [ ! -e $temp/start ]; then
     echo $(date +%s) > $temp/start
 fi
 
-keyboard() {
+00_keyboard() {
     # items=$(localectl list-keymaps)
     items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | awk -F. '{print $1}' | sort)
     options=()
@@ -112,7 +112,7 @@ keyboard() {
     echo "$key" > $temp/keyboard
 }
 
-timeZone() {
+05_timeZone() {
     items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
     options=()
     for item in $items; do
@@ -146,7 +146,7 @@ timeZone() {
     echo "$timezone" > $temp/timeZone
 }
 
-format() {
+10_format() {
     items=$(lsblk | grep disk | awk '{print $1}' | sort)
     options=()
     for item in $items; do
@@ -220,7 +220,7 @@ format() {
     echo "$device" > $temp/format
 }
 
-mounting() {
+15_mounting() {
     device=$(cat $temp/format)
 
     if is_efi
@@ -248,7 +248,7 @@ mounting() {
     df | grep -E "$|$device"
 }
 
-mirror() {
+20_mirror() {
     file="/etc/pacman.d/mirrorlist"
 
     if ! [ -f $file.default ]
@@ -294,7 +294,7 @@ mirror() {
     # fi
 }
 
-base() {
+25_base() {
     start=$(date +%s)
 
 
@@ -315,12 +315,12 @@ base() {
     print_color "total base install time : $min:$sec min" "1;32"
 }
 
-mirror2() {
+30_mirror2() {
     cp -v /etc/pacman.d/mirrorlist.default $born/etc/pacman.d/mirrorlist.default
     # cp -v /etc/pacman.d/mirrorlist $born/etc/pacman.d/mirrorlist
 }
 
-hostname() {
+40_hostname() {
     # cp -v $born/etc/hostname $born/etc/hostname.default
     # cat $born/etc/hostname
 
@@ -344,7 +344,7 @@ hostname() {
     # cat $born/etc/hosts
 }
 
-fstab() {
+45_fstab() {
     # if [ -f $born/etc/fstab.default ]
     # then
 	# cp -v $born/etc/fstab.default $born/etc/fstab
@@ -368,7 +368,7 @@ fstab() {
     cat $born/etc/fstab
 }
 
-bootLoader() {
+50_bootLoader() {
     device=$(cat $temp/format)
 
     if is_efi
@@ -426,7 +426,7 @@ EOF
     fi
 }
 
-rootPasswd() {
+55_rootPasswd() {
     # while true
     # do
 	# passwd $1
@@ -450,7 +450,7 @@ EOF
     # while arch-chroot $born passwd root
 }
 
-timeZone2() {
+60_timeZone2() {
     # cp $born/etc/localtime $born/etc/localtime.default
 
     print_color "ln -vfs /usr/share/zoneinfo/$(cat $temp/timeZone) $born/etc/localtime" 33
@@ -462,7 +462,7 @@ timedatectl set-timezone $(cat $temp/timeZone)
 EOF
 }
 
-locale() {
+65_locale() {
     # vi $born/etc/locale.gen
     # exit 1
     # cp $born/etc/locale.gen $born/etc/locale.gen.default
@@ -483,7 +483,7 @@ locale() {
 
 }
 
-keyboard2() {
+70_keyboard2() {
     # cp -v $born/etc/vconsole.conf $born/etc/vconsole.conf.default
     str="KEYMAP=$(cat $temp/keyboard)"
 
@@ -492,12 +492,12 @@ keyboard2() {
     print_color "echo '$str' > $born/etc/vconsole.conf" 33
 }
 
-mkinit() {
+75_mkinit() {
     print_color "mkinitcpio -p linux" 33
     arch-chroot $born mkinitcpio -p linux
 }
 
-addUser() {
+80_addUser() {
     while [ -z "$userName" ]
     do
 	userName=$($DIALOG --backtitle "$appTitle" --title "Add User" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
@@ -527,7 +527,7 @@ EOF
     echo "$userName" > $temp/addUser
 }
 
-zsh() {
+85_zsh() {
     print_color "pacstrap $born zsh" 33
     pacstrap $born zsh
 
@@ -550,14 +550,14 @@ chown gauthier:users /$user_file
 EOF
 }
 
-sudoers() {
+90_sudoers() {
     cp -v $born/etc/sudoers $born/etc/sudoers.default
 
     sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' $born/etc/sudoers
     # sed -i 's/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/' $born/etc/sudoers
 }
 
-wifi() {
+95_wifi() {
     print_color "WIFI DECTECED ON THIS MACHINE" "1;32"
     if iwconfig 2>&1 | grep ESSID | grep -v off > /dev/null
     then
@@ -589,30 +589,31 @@ EOF
     fi
 }
 
-umounting() {
+100_umounting() {
     umount -vR $born
 }
 
-for function in \
-    keyboard \
-    timeZone \
-    format \
-    mounting \
-    mirror \
-    base \
-    mirror2 \
-    hostname \
-    fstab \
-    bootLoader \
-    timeZone2 \
-    locale \
-    keyboard2 \
-    mkinit \
-    addUser \
-    zsh \
-    sudoers \
-    wifi \
-    umounting
+for function in $(declare -f | awk '{print $3}' | grep '^[0-9]*_.*$')
+# for function in \
+    # keyboard \
+    # timeZone \
+    # format \
+    # mounting \
+    # mirror \
+    # base \
+    # mirror2 \
+    # hostname \
+    # fstab \
+    # bootLoader \
+    # timeZone2 \
+    # locale \
+    # keyboard2 \
+    # mkinit \
+    # addUser \
+    # zsh \
+    # sudoers \
+    # wifi \
+    # umounting
 do
     if ! [ -f "/tmp/minimal/$function" ]
     then
