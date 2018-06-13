@@ -589,11 +589,12 @@ EOF
     fi
 }
 
-100_umounting() {
+99_umounting() {
     umount -vR $born
 }
 
-for function in $(declare -f | awk '{print $3}' | grep '^[0-9]*_.*$')
+
+for function in $(declare -F | awk '{print $3}' | grep '^[0-9][0-9]_.*$')
 # for function in \
     # keyboard \
     # timeZone \
@@ -615,6 +616,9 @@ for function in $(declare -f | awk '{print $3}' | grep '^[0-9]*_.*$')
     # wifi \
     # umounting
 do
+    # echo "$function"
+    # continue
+
     if ! [ -f "/tmp/minimal/$function" ]
     then
 	bar "$function"
@@ -626,6 +630,8 @@ do
 	read
     fi
 done
+
+exit 0
 
 # rm -r /tmp/minimal/
 end=$(date +%s)
