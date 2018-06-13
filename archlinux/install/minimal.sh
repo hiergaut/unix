@@ -103,7 +103,7 @@ fi
 	options+=("$item" "")
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "dvorak-programmer" 0 0 0 \
+    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -118,7 +118,8 @@ fi
     for item in $items; do
 	options+=("$item" "")
     done
-    timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "Europe" 0 0 0 \
+    #TODO auto find your country
+    timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
     if [ ! "$?" = "0" ]; then
@@ -132,7 +133,7 @@ fi
 	options+=("$item" "")
     done
     # timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
-    timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "Paris" 0 0 0 \
+    timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -153,7 +154,8 @@ fi
 	options+=("$item" "")
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "\n$(lsblk)\n" 0 0 0 \
+
+    device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk && echo)" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -262,7 +264,7 @@ fi
 	options+=("$item" "")
     done
     # country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
-    country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "France" 0 0 0 \
+    country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -309,10 +311,10 @@ fi
 
 
     end=$(date +%s)
-    diff=$(echo $end - $(cat $temp/start) | bc)
+    diff=$(echo $end - $start | bc)
     min=$(echo "$diff / 60" | bc)
     sec=$(echo "$diff % 60" | bc)
-    print_color "total base install time : $min:$sec min" "1;32"
+    print_color "total base install time : $min:$sec min" "1;33"
 }
 
 30_mirror2() {
@@ -336,10 +338,11 @@ fi
     # cat $born/etc/hostname
 
 
-    # cp -v $born/etc/hosts $born/etc/hosts.default
+    cp -v $born/etc/hosts $born/etc/hosts.default
     # # cat $born/etc/hosts
     #
     # echo -e "127.0.0.1\t$host.localdomain\t$hostname" >> $born/etc/hosts
+
     echo -e "127.0.0.1\t$host" >> $born/etc/hosts
     # cat $born/etc/hosts
 }
@@ -426,29 +429,29 @@ EOF
     fi
 }
 
-55_rootPasswd() {
-    # while true
-    # do
-	# passwd $1
-	# [ $? -eq 0 ] && break
-    # done
-
-    str1="a"
-    str2="b"
-    while [ $str1 != $str2 ]
-    do
-	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-    done
-    passwd="$str1"
-
-    arch-chroot $born /bin/sh << EOF
-echo -e "$passwd\n$passwd" | passwd root
-EOF
-
-    echo "$passwd" > $temp/rootPasswd
-    # while arch-chroot $born passwd root
-}
+# 55_rootPasswd() {
+#     # while true
+#     # do
+# 	# passwd $1
+# 	# [ $? -eq 0 ] && break
+#     # done
+#
+#     str1="a"
+#     str2="b"
+#     while [ $str1 != $str2 ]
+#     do
+# 	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+# 	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+#     done
+#     passwd="$str1"
+#
+#     arch-chroot $born /bin/sh << EOF
+# echo -e "$passwd\n$passwd" | passwd root
+# EOF
+#
+#     echo "$passwd" > $temp/rootPasswd
+#     # while arch-chroot $born passwd root
+# }
 
 60_timeZone2() {
     # cp $born/etc/localtime $born/etc/localtime.default
@@ -456,16 +459,17 @@ EOF
     print_color "ln -vfs /usr/share/zoneinfo/$(cat $temp/timeZone) $born/etc/localtime" 33
     ln -vfs /usr/share/zoneinfo/$(cat $temp/timeZone) $born/etc/localtime
 
-    arch-chroot $born /bin/bash << EOF
-timedatectl set-ntp true
-timedatectl set-timezone $(cat $temp/timeZone)
-EOF
+    # failed to create bus connection timedatectl in chroot
+#     arch-chroot $born /bin/bash << EOF
+# timedatectl set-ntp true
+# timedatectl set-timezone $(cat $temp/timeZone)
+# EOF
 }
 
 65_locale() {
     # vi $born/etc/locale.gen
     # exit 1
-    # cp $born/etc/locale.gen $born/etc/locale.gen.default
+    cp $born/etc/locale.gen $born/etc/locale.gen.default
     cp /etc/locale.gen $born/etc/locale.gen
     sed -i 's/#en_US ISO-8859-1/en_US ISO-8859-1/' $born/etc/locale.gen
 
@@ -580,6 +584,14 @@ network={
 
 	chmod 600 $born/etc/wpa_supplicant/wpa_supplicant-$interface.conf
 
+
+
+	print_color "    	arch-chroot $born /bin/bash << EOF
+systemctl enable dhcpcd
+systemctl enable wpa_supplicant@$interface
+EOF
+" 33
+
     	arch-chroot $born /bin/bash << EOF
 systemctl enable dhcpcd
 systemctl enable wpa_supplicant@$interface
@@ -591,6 +603,8 @@ EOF
 
 99_umounting() {
     umount -vR $born
+    print_color "df" 33
+    df
 }
 
 
@@ -630,8 +644,6 @@ do
 	read
     fi
 done
-
-exit 0
 
 # rm -r /tmp/minimal/
 end=$(date +%s)
