@@ -127,13 +127,28 @@ fi
     # for item in $items; do
 	# options+=("$item" "")
     # done
-    echo $items | while read item; do
-	options+=("$item" "")
+    # echo $items | while read item; do
+	# options+=("$item" "")
+    # done
+    items=$(echo "$items" | tr '\n' '$' | sed 's/\$/ \$ /g')
+
+    str=""
+    for item in $items; do
+	if [ "$item" = "\$" ]; then
+	    options+=("$str" "")
+	    str=""
+	else
+	    if [ "$str" ]; then
+		str="$str $item"
+	    else
+		str="$item"
+	    fi
+	fi
     done
 
     #TODO auto find your country
     # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
-    timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone (auto find your country : $yourCountry)" --default-item "$yourContry" --menu "" 0 0 0 \
+    timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone (auto find your country : $yourCountry)" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
