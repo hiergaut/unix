@@ -124,14 +124,19 @@ fi
 
     # items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
     options=()
-    for item in $items; do
+    # for item in $items; do
+	# options+=("$item" "")
+    # done
+    echo $items | while read item; do
 	options+=("$item" "")
     done
+
     #TODO auto find your country
     # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
-	timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone (auto find your country : $yourCountry)" --default-item "$yourContry" --menu "" 0 0 0 \
+    timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone (auto find your country : $yourCountry)" --default-item "$yourContry" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
+
     if [ ! "$?" = "0" ]; then
 	return 1
     fi
