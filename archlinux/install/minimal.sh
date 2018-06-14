@@ -148,7 +148,7 @@ fi
 
     #TODO auto find your country
     # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
-    timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone (auto find your country : $yourCountry)" --menu "" 0 0 0 \
+    timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone" --menu "$yourCountry" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -162,7 +162,7 @@ fi
 	echo "get timezone failed"
 	exit 3
     fi
-    cd -
+    # cd -
 
     # items=$(ls /usr/share/zoneinfo/$timezone/)
     # options=()
