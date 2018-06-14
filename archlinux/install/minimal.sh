@@ -229,7 +229,7 @@ fi
 	    return 1
 	fi
     else
-	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno ""$device"1   512M   Linux\n"$device"2   40G    Linux\n"$device"3   *G     Linux\n\n\n             Commit ?" 0 0)
+	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device"1   512M   Linux\n"$device"2   40G    Linux\n"$device"3   *G     Linux\n\n\n             Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted $device mklabel dos\\033[0m"
 	    parted $device mklabel msdos -ms
@@ -458,13 +458,17 @@ EOF
 # EOF
 
     else
-	pacstrap $born syslinux
-
+	pacstrap $born grub
 	arch-chroot $born /bin/bash << EOF
-syslinux-install_update -im
-sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
-sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
+grub-install --target=i386-pc --no-floppy --recheck /dev/$device
 EOF
+	# pacstrap $born syslinux
+
+# 	arch-chroot $born /bin/bash << EOF
+# syslinux-install_update -im
+# sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
+# sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
+# EOF
     fi
 }
 
