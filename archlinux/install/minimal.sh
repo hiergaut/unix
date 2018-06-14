@@ -185,6 +185,7 @@ fi
 }
 
 10_format() {
+    #TODO select device horrible
     items=$(lsblk | grep disk | awk '{print $1}' | sort)
     options=()
     for item in $items; do
@@ -202,7 +203,7 @@ fi
     if is_efi
     then
 	# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem (root)\n"$device"3   *G     Linux filesystem (/home)\n\n\n                Commit ?" 0 0)
+	if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n                Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
 	    parted $device mklabel gpt -ms
@@ -229,7 +230,7 @@ fi
 	    return 1
 	fi
     else
-	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device"1   512M   Linux\n"$device"2   40G    Linux\n"$device"3   *G     Linux\n\n\n             Commit ?" 0 0)
+	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device"1   512M   Linux filesystem /boot\n"$device"2   40G    Linux Filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n             Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted $device mklabel dos\\033[0m"
 	    parted $device mklabel msdos -ms
@@ -237,6 +238,7 @@ fi
 	    parted $device mkpart primary ext2 1MiB 513Mib -ms
 	    echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
 	    parted $device set 1 boot on -ms
+
 	    echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
 	    parted $device mkpart primary ext4 513Mib 40.5Gib -ms
 	    echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
@@ -460,7 +462,7 @@ EOF
     else
 	pacstrap $born grub
 	arch-chroot $born /bin/bash << EOF
-grub-install --target=i386-pc --no-floppy --recheck /dev/$device
+grub-install --target=i386-pc --no-floppy --recheck $device
 EOF
 	# pacstrap $born syslinux
 
@@ -605,10 +607,10 @@ EOF
 }
 
 95_wifi() {
-    print_color "WIFI DECTECED ON THIS MACHINE" "1;32"
     if iwconfig 2>&1 | grep ESSID | grep -v off > /dev/null
     then
-	print_color "install wifi package for a post install"
+	print_color "WIFI DECTECED ON THIS MACHINE" "1;32"
+	print_color "install wifi package for a post install" 33
 	# pacstrap $born wireless_tools wpa_supplicant dialog
 	# pacstrap $born wpa_supplicant dialog #for wifi-menu
 	pacstrap $born wpa_supplicant
@@ -689,6 +691,7 @@ do
 done
 
 # rm -r /tmp/minimal/
+#TODO failed negative date
 end=$(date +%s)
 diff=$(echo $end - $(cat $temp/start) | bc)
 min=$(echo "$diff / 60" | bc)
