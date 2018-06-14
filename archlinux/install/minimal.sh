@@ -113,29 +113,46 @@ fi
 }
 
 05_timeZone() {
-    items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
+    if [ -e $temp/yourCountry ]; then
+	yourCountry=$(cat $temp/yourCountry)
+    else
+	yourCountry=$(curl -s https://whatismycountry.com/ | grep 'Your Country is' | sed 's/.*Your Country is \([A-Z][a-z]*\).*/\1/')
+	echo $yourCountry > $temp/yourCountry
+    fi
+
+    items=$(curl https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order | grep -B 2 "$yourCountry\">$yourCountry" | sed 's/.*title=\"\([A-Za-z ]*\)\".*/\1/' | grep '^[A-Z].*' | grep -v "$yourCountry")
+
+    # items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
     options=()
     for item in $items; do
 	options+=("$item" "")
     done
     #TODO auto find your country
-    timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
+    # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
+	timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone (auto find your country : $yourCountry)" --default-item "$yourContry" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
     if [ ! "$?" = "0" ]; then
 	return 1
     fi
 
+    cd /usr/share/zoneinfo/
+    timezone=$(find . -name "$timezone" | egrep -v 'posix|right' | cut --complement -c1-2)
+    if [ -z $timezone ]; then
+	echo "get timezone failed"
+	exit 3
+    fi
+    cd -
 
-    items=$(ls /usr/share/zoneinfo/$timezone/)
-    options=()
-    for item in $items; do
-	options+=("$item" "")
-    done
-    # timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
-    timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
-	"${options[@]}" \
-	3>&1 1>&2 2>&3)
+    # items=$(ls /usr/share/zoneinfo/$timezone/)
+    # options=()
+    # for item in $items; do
+	# options+=("$item" "")
+    # done
+    # # timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
+    # timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
+	# "${options[@]}" \
+	# 3>&1 1>&2 2>&3)
 
 
     print_color "timedatectl set-ntp true" 33
@@ -251,6 +268,8 @@ fi
 }
 
 20_mirror() {
+    yourCountry=$(cat $temp/yourCountry)
+
     file="/etc/pacman.d/mirrorlist"
 
     if ! [ -f $file.default ]
@@ -264,7 +283,7 @@ fi
 	options+=("$item" "")
     done
     # country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
-    country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 0 0 0 \
+    country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --default-item "$yourCountry" --menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
