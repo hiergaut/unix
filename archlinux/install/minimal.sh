@@ -97,6 +97,7 @@ fi
 
 00_keyboard() {
     # items=$(localectl list-keymaps)
+    #TODO auto select with the current keymap
     items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | awk -F. '{print $1}' | sort)
     options=()
     for item in $items; do
@@ -193,7 +194,7 @@ fi
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
 
-    device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk && echo)" 0 0 0 \
+    device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -f && echo)" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -631,19 +632,22 @@ network={
 
 
 
-	print_color "    	arch-chroot $born /bin/bash << EOF
-systemctl enable dhcpcd
+	print_color "arch-chroot $born /bin/bash << EOF
 systemctl enable wpa_supplicant@$interface
 EOF
 " 33
 
     	arch-chroot $born /bin/bash << EOF
-systemctl enable dhcpcd
 systemctl enable wpa_supplicant@$interface
 EOF
 
 
     fi
+
+    print_color "enable dhcpcd" 33
+    arch-chroot $born /bin/bash << EOF
+systemctl enable dhcpcd
+EOF
 }
 
 99_umounting() {
