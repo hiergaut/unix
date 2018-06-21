@@ -121,12 +121,12 @@ fi
 	echo $yourCountry > $temp/yourCountry
     fi
 
-    if [ ! -e $temp/allCapital ]; then
+    allCap="$temp/allCapital"
+    if [ ! -e $allCap ]; then
 	curl https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order > $temp/allCapital
     fi
-    allCap=$(cat $temp/allCapital)
     #TODO only capital but not others :(
-    items=$(echo $allCap | grep -A 2 "$yourCountry\">$yourCountry" | sed 's/.*title=\"\([A-Za-z ]*\)\".*/\1/' | grep '^[A-Z].*' | grep -v "$yourCountry")
+    items=$(cat $allCap | grep -A 2 "$yourCountry\">$yourCountry" | sed 's/.*title=\"\([A-Za-z ]*\)\".*/\1/' | grep '^[A-Z].*' | grep -v "$yourCountry")
 
     # items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
     options=()
