@@ -1,7 +1,5 @@
 #! /bin/bash -e
 
-#TODO auto find country with capital for mirror
-#TODO auto select your country for timezone
 
 
 bar() {
@@ -98,6 +96,7 @@ fi
 00_keyboard() {
     # items=$(localectl list-keymaps)
     #TODO auto select with the current keymap
+    exit
     items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | awk -F. '{print $1}' | sort)
     options=()
     for item in $items; do
@@ -152,7 +151,6 @@ fi
 	fi
     done
 
-    #TODO auto find your country
     # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
     timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone" --menu "$yourCountry" 0 0 0 \
 	"${options[@]}" \
