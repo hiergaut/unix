@@ -354,7 +354,7 @@ fi
     #optional
     # pacstrap $born openssh zsh rsync wget dialog vim
     print_color "install wget to post possible download script"
-    pacstrap $born wget openssh rsync neovim # to download post script installation
+    pacstrap $born wget openssh rsync neovim unison # to download post script installation
 
 
     end=$(date +%s)
@@ -695,6 +695,7 @@ do
 	# sleep 1
 	# optional
 	touch "/tmp/minimal/$function"
+	#TODO disable read
 	read
     fi
 done
