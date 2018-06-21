@@ -104,7 +104,7 @@ fi
 	options+=("$item" "")
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 0 0 0 \
+    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" ---default-item "dvorak-programmer" -menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
@@ -121,7 +121,12 @@ fi
 	echo $yourCountry > $temp/yourCountry
     fi
 
-    items=$(curl https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order | grep -B 2 "$yourCountry\">$yourCountry" | sed 's/.*title=\"\([A-Za-z ]*\)\".*/\1/' | grep '^[A-Z].*' | grep -v "$yourCountry")
+    if [ ! -e $temp/allCapital ]; then
+	curl https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order > $temp/allCapital
+    fi
+    allCap=$(cat $temp/allCapital)
+    #TODO only capital but not others :(
+    items=$(echo $allCap | grep -A 2 "$yourCountry\">$yourCountry" | sed 's/.*title=\"\([A-Za-z ]*\)\".*/\1/' | grep '^[A-Z].*' | grep -v "$yourCountry")
 
     # items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
     options=()
