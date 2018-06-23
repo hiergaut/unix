@@ -104,7 +104,7 @@ fi
 	options+=("$item" "")
     done
     # key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" ---default-item "dvorak-programmer" -menu "" 0 0 0 \
+    key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --default-item "dvorak-programmer" -menu "" 0 0 0 \
 	"${options[@]}" \
 	3>&1 1>&2 2>&3)
 
