@@ -240,13 +240,13 @@ fi
 	if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device"1   512M   Linux filesystem /boot\n"$device"2   40G    Linux Filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n             Commit ?" 0 0)
 	then
 	    echo -e "\\033[33mparted $device mklabel dos\\033[0m"
-	    # parted $device mklabel msdos -ms
-	    parted $device mklabel gpt -ms
+	    parted $device mklabel msdos -ms
+	    # parted $device mklabel gpt -ms
 	    echo -e "\\033[33mparted $device mkpart ext2 1MiB 513Mib\\033[0m"
 	    parted $device mkpart primary ext2 1MiB 513Mib -ms
 	    echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
-	    # parted $device set 1 boot on -ms
-	    parted $device set 1 bios-grub on -ms
+	    parted $device set 1 boot on -ms
+	    # parted $device set 1 bios-grub on -ms
 
 	    echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
 	    parted $device mkpart primary ext4 513Mib 40.5Gib -ms
@@ -469,17 +469,18 @@ EOF
 # EOF
 
     else
-	pacstrap $born grub
-	arch-chroot $born /bin/bash << EOF
-grub-install --target=i386-pc --no-floppy --recheck $device
-EOF
-	# pacstrap $born syslinux
-
+# 	pacstrap $born grub
 # 	arch-chroot $born /bin/bash << EOF
-# syslinux-install_update -im
-# sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
-# sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
+# grub-install --target=i386-pc --no-floppy --recheck $device
 # EOF
+
+	pacstrap $born syslinux
+
+	arch-chroot $born /bin/bash << EOF
+syslinux-install_update -im
+sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
+sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
+EOF
     fi
 }
 
