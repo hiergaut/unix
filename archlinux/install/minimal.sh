@@ -96,7 +96,8 @@ fi
 00_keyboard() {
     # items=$(localectl list-keymaps)
     #TODO auto select with the current keymap
-    exit
+    # can't find with localctl current keymap :(
+    # exit
     items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | awk -F. '{print $1}' | sort)
     options=()
     for item in $items; do
