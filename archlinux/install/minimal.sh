@@ -469,9 +469,18 @@ EOF
 # EOF
 
     else
-	pacstrap $born grub
+	#grub efi
+	pacstrap $born grub os-prober
+	pacstrap $born dosfstools
+
+	grub_file="/etc/default/grub"
+
+	mkdir -pv $efi_rep/EFI
 	arch-chroot $born /bin/bash << EOF
 grub-install --target=i386-pc --no-floppy --recheck $device
+cp -v $grub_file $grub_file.default
+sed -i s/"GRUB_TIMEOUT=5"/"GRUB_TIMEOUT=0"/ $grub_file
+grub-mkconfig -o /boot/grub/grub.cfg
 EOF
 
 # 	pacstrap $born syslinux
