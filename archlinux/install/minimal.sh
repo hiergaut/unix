@@ -469,18 +469,18 @@ EOF
 # EOF
 
     else
-# 	pacstrap $born grub
-# 	arch-chroot $born /bin/bash << EOF
-# grub-install --target=i386-pc --no-floppy --recheck $device
-# EOF
-
-	pacstrap $born syslinux
-
+	pacstrap $born grub
 	arch-chroot $born /bin/bash << EOF
-syslinux-install_update -im
-sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
-sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
+grub-install --target=i386-pc --no-floppy --recheck $device
 EOF
+
+# 	pacstrap $born syslinux
+#
+# 	arch-chroot $born /bin/bash << EOF
+# syslinux-install_update -im
+# sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
+# sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
+# EOF
     fi
 }
 
