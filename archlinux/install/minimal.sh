@@ -190,13 +190,13 @@ import urllib.request, json
 with urllib.request.urlopen("https://raw.githubusercontent.com/samayo/country-json/master/src/country-by-capital-city.json") as url:
     data = json.loads(url.read().decode())
     for i in data:
-	if i['country'] == '$country':
+	if i['country'] == '$yourCountry':
 	    print(i['city'])
 	    break
 END
 )
 
-    timezone="$yourCountry/$capital"
+    timezone=$(find . -name "$capital" | egrep -v 'posix|right' | cut --complement -c1-2)
 
     print_color "timedatectl set-ntp true" 33
     timedatectl set-ntp true
