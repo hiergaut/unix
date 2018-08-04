@@ -119,56 +119,57 @@ fi
     if [ -e $temp/yourCountry ]; then
 	yourCountry=$(cat $temp/yourCountry)
     else
-	yourCountry=$(curl -s https://whatismycountry.com/ | grep 'Your Country is' | sed 's/.*Your Country is \([A-Z][a-z]*\).*/\1/')
+	# yourCountry=$(curl -s https://whatismycountry.com/ | grep 'your country is' | sed 's/.*your country is \([A-Z][a-z]*\).*/\1/')
+	yourCountry=$(curl ipconfig.io/country)
 	echo $yourCountry > $temp/yourCountry
     fi
 
-    allCap="$temp/allCapital"
-    if [ ! -e $allCap ]; then
-	curl https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order > $temp/allCapital
-    fi
-    #TODO only capital but not others :(
-    items=$(cat $allCap | grep -A 2 "$yourCountry\">$yourCountry" | sed 's/.*title=\"\([A-Za-z ]*\)\".*/\1/' | grep '^[A-Z].*' | grep -v "$yourCountry")
-
-    # items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
-    options=()
+    # allCap="$temp/allCapital"
+    # if [ ! -e $allCap ]; then
+    #     curl https://en.wikipedia.org/wiki/List_of_national_capitals_in_alphabetical_order > $temp/allCapital
+    # fi
+    # #TODO only capital but not others :(
+    # items=$(cat $allCap | grep -A 2 "$yourCountry\">$yourCountry" | sed 's/.*title=\"\([A-Za-z ]*\)\".*/\1/' | grep '^[A-Z].*' | grep -v "$yourCountry")
+    #
+    # # items=$(ls -l /usr/share/zoneinfo/ | grep '^d' | gawk -F':[0-9]* ' '/:/{print $2}')
+    # options=()
+    # # for item in $items; do
+    #     # options+=("$item" "")
+    # # done
+    # # echo $items | while read item; do
+    #     # options+=("$item" "")
+    # # done
+    # items=$(echo "$items" | tr '\n' '$' | sed 's/\$/ \$ /g')
+    #
+    # str=""
     # for item in $items; do
-	# options+=("$item" "")
+    #     if [ "$item" = "\$" ]; then
+    #         options+=("$str" "")
+    #         str=""
+    #     else
+    #         if [ "$str" ]; then
+    #             str="$str $item"
+    #         else
+    #             str="$item"
+    #         fi
+    #     fi
     # done
-    # echo $items | while read item; do
-	# options+=("$item" "")
-    # done
-    items=$(echo "$items" | tr '\n' '$' | sed 's/\$/ \$ /g')
-
-    str=""
-    for item in $items; do
-	if [ "$item" = "\$" ]; then
-	    options+=("$str" "")
-	    str=""
-	else
-	    if [ "$str" ]; then
-		str="$str $item"
-	    else
-		str="$item"
-	    fi
-	fi
-    done
-
-    # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
-    timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone" --menu "$yourCountry" 0 0 0 \
-	"${options[@]}" \
-	3>&1 1>&2 2>&3)
-
-    if [ ! "$?" = "0" ]; then
-	return 1
-    fi
-
-    cd /usr/share/zoneinfo/
-    timezone=$(find . -name "$timezone" | egrep -v 'posix|right' | cut --complement -c1-2)
-    if [ -z $timezone ]; then
-	echo "get timezone failed"
-	exit 3
-    fi
+    #
+    # # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
+    # timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone" --menu "$yourCountry" 0 0 0 \
+    #     "${options[@]}" \
+    #     3>&1 1>&2 2>&3)
+    #
+    # if [ ! "$?" = "0" ]; then
+    #     return 1
+    # fi
+    #
+    # cd /usr/share/zoneinfo/
+    # timezone=$(find . -name "$timezone" | egrep -v 'posix|right' | cut --complement -c1-2)
+    # if [ -z $timezone ]; then
+    #     echo "get timezone failed"
+    #     exit 3
+    # fi
     # cd -
 
     # items=$(ls /usr/share/zoneinfo/$timezone/)
@@ -181,6 +182,21 @@ fi
 	# "${options[@]}" \
 	# 3>&1 1>&2 2>&3)
 
+    # capital=$(curl https://raw.githubusercontent.com/samayo/country-json/master/src/country-by-capital-city.json | grep -A 1 "\"$yourCountry\"" | tail -n1 | awk '{print $2}')
+
+    capital=$(python << END
+import urllib.request, json 
+
+with urllib.request.urlopen("https://raw.githubusercontent.com/samayo/country-json/master/src/country-by-capital-city.json") as url:
+    data = json.loads(url.read().decode())
+    for i in data:
+	if i['country'] == '$country':
+	    print(i['city'])
+	    break
+END
+)
+
+    timezone="$yourCountry/$capital"
 
     print_color "timedatectl set-ntp true" 33
     timedatectl set-ntp true
@@ -221,6 +237,7 @@ fi
 	    echo
 
 	    echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
+	    #TODO maybe 50Gb for root part
 	    parted $device mkpart primary ext4 513Mib 40.5Gib -ms
 
 	    echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
@@ -364,7 +381,7 @@ fi
     diff=$(echo $end - $start | bc)
     min=$(echo "$diff / 60" | bc)
     sec=$(echo "$diff % 60" | bc)
-    print_color "total base install time : $min:$sec min" "1;33"
+    print_color "total base install time : $min min and $sec sec" "1;33"
 }
 
 30_mirror2() {
@@ -390,6 +407,7 @@ fi
 
     cp -v $born/etc/hosts $born/etc/hosts.default
     # # cat $born/etc/hosts
+    #TODO hostnamectl set-hostname <machine>
     #
     # echo -e "127.0.0.1\t$host.localdomain\t$hostname" >> $born/etc/hosts
 
@@ -543,7 +561,9 @@ EOF
 
     arch-chroot $born locale-gen
 
-#     arch-chroot $born /bin/bash << EOF
+    arch-chroot $born /bin/bash << EOF
+set-locale LANG="en_US.UTF-8"
+EOF
 # cd /tmp
 # curl -o locale-check.sh http://ix.io/ksS
 # bash locale-check.sh
@@ -638,6 +658,7 @@ EOF
 
 	interface=$(cat $f | grep Interface | awk -F= '{print $2}')
 
+	#TODO bad \ on string psk
 	echo "ctrl_interface=/var/run/wpa_supplicant
 update_config=1
 
@@ -720,7 +741,7 @@ diff=$(echo $end - $(cat $temp/start) | bc)
 min=$(echo "$diff / 60" | bc)
 sec=$(echo "$diff % 60" | bc)
 
-if ($DIALOG --backtitle "$appTitle" --title "Shutdown (install duration : $min:$sec min)" --yesno "\nPlease remove the usb key from the live cd before restarting the machine\n\n\n                   Poweroff now ?" 0 0)
+if ($DIALOG --backtitle "$appTitle" --title "Shutdown (install duration : $min min and $sec sec)" --yesno "\nPlease remove the usb key from the live cd before restarting the machine\n\n\n                   Poweroff now ?" 0 0)
 then
     poweroff
 fi
