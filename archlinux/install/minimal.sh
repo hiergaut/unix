@@ -562,9 +562,11 @@ EOF
 
 	arch-chroot $born locale-gen
 
-	arch-chroot $born /bin/bash << EOF
-set-locale LANG="en_US.UTF-8"
-EOF
+	#TODO bad locale set
+#     arch-chroot $born /bin/bash << EOF
+# set-locale LANG="en_US.UTF-8"
+# EOF
+
 # cd /tmp
 # curl -o locale-check.sh http://ix.io/ksS
 # bash locale-check.sh
@@ -730,7 +732,7 @@ do
 		# sleep 1
 		# optional
 		touch "/tmp/minimal/$function"
-		#TODO disable read
+		#TODO disable read to fast mode (read for debug mode)
 		read
 	fi
 done
