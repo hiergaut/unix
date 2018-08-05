@@ -660,24 +660,26 @@ EOF
 		f="/etc/netctl/wlp*"
 
 		interface=$(cat $f | grep Interface | awk -F= '{print $2}')
+		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
+		psk=$(cat $f | grep Key | awk -F= '{print $2}')
 
 		#TODO bad \ on string psk
 		echo "ctrl_interface=/var/run/wpa_supplicant
-		update_config=1
+update_config=1
 
-		network={
-		ssid=\"$(cat $f | grep ESSID | awk -F= '{print $2}')\"
-		psk=\"$(cat $f | grep Key | awk -F= '{print $2}')\"
-	}" > "$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
+network={
+	ssid=\"$essid\"
+	password=hash:$(echo -n $psk | iconv -t utf16le | openssl md4)\"
+}" > "$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
 
 	chmod 600 $born/etc/wpa_supplicant/wpa_supplicant-$interface.conf
 
 
 
 	print_color "arch-chroot $born /bin/bash << EOF
-	systemctl enable wpa_supplicant@$interface
-	EOF
-	" 33
+systemctl enable wpa_supplicant@$interface
+EOF
+" 33
 
 	arch-chroot $born /bin/bash << EOF
 systemctl enable wpa_supplicant@$interface
