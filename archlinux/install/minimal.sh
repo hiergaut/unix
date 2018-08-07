@@ -563,14 +563,14 @@ EOF
 	arch-chroot $born locale-gen
 
 	#TODO bad locale set
-#     arch-chroot $born /bin/bash << EOF
-# set-locale LANG="en_US.UTF-8"
-# EOF
+	#     arch-chroot $born /bin/bash << EOF
+	# set-locale LANG="en_US.UTF-8"
+	# EOF
 
-# cd /tmp
-# curl -o locale-check.sh http://ix.io/ksS
-# bash locale-check.sh
-# EOF
+	# cd /tmp
+	# curl -o locale-check.sh http://ix.io/ksS
+	# bash locale-check.sh
+	# EOF
 
 }
 
@@ -663,25 +663,31 @@ EOF
 		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
 		psk=$(cat $f | grep Key | awk -F= '{print $2}')
 
+		file="$bord/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
+
 		#TODO bad \ on string psk
 		echo "ctrl_interface=/var/run/wpa_supplicant
 update_config=1
+" > $file
 
-network={
-	ssid=\"$essid\"
-	password=hash:$(echo -n $psk | iconv -t utf16le | openssl md4)\"
-}" > "$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
-
-	chmod 600 $born/etc/wpa_supplicant/wpa_supplicant-$interface.conf
+		wpa_passphrase "$essid" "$psk" | grep '#psk=' -v >> $file
 
 
+		# network={
+		#     ssid=\"$essid\"
+		#     password=hash:$(echo -n $psk | iconv -t utf16le | openssl md4 | cut -c1-9 --complement)\"
+		# }" > "$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
 
-	print_color "arch-chroot $born /bin/bash << EOF
-systemctl enable wpa_supplicant@$interface
-EOF
-" 33
+		chmod 600 $file
 
-	arch-chroot $born /bin/bash << EOF
+
+
+		print_color "arch-chroot $born /bin/bash << EOF
+		systemctl enable wpa_supplicant@$interface
+		EOF
+		" 33
+
+		arch-chroot $born /bin/bash << EOF
 systemctl enable wpa_supplicant@$interface
 EOF
 
