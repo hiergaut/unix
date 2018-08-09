@@ -416,29 +416,6 @@ print_color "total base install time : $min min and $sec sec" "1;33"
 	# cat $born/etc/hosts
 }
 
-45_fstab() {
-	# if [ -f $born/etc/fstab.default ]
-	# then
-	# cp -v $born/etc/fstab.default $born/etc/fstab
-	# else
-	# cp -v $born/etc/fstab $born/etc/fstab.default
-	# fi
-	# cat $born/etc/fstab
-
-	# genfstab -U -p $born | head -n +9 >> $born/etc/fstab
-	print_color "genfstab -U -p $born >> $born/etc/fstab" 33
-	genfstab $born >> $born/etc/fstab
-
-	# sed -i s/"\/mnt\/"/"\/"/ /mnt/etc/fstab
-	# sed -i s/"\/mnt"/"\/ "/ /mnt/etc/fstab
-
-	# if is_efi
-	# then
-	# echo -e "# /esp/EFI/arch" >> $born/etc/fstab
-	# echo -e "/esp/EFI/arch\t/boot\tnone\tdefaults,bind\t0 0" >> $born/etc/fstab
-	# fi
-	cat $born/etc/fstab
-}
 
 50_bootLoader() {
 	device=$(cat $temp/format)
@@ -616,6 +593,33 @@ echo -e "$passwd\n$passwd" | passwd $userName
 EOF
 
 echo "$userName" > $temp/addUser
+}
+
+
+82_fstab() {
+	# if [ -f $born/etc/fstab.default ]
+	# then
+	# cp -v $born/etc/fstab.default $born/etc/fstab
+	# else
+	# cp -v $born/etc/fstab $born/etc/fstab.default
+	# fi
+	# cat $born/etc/fstab
+
+	# genfstab -U -p $born | head -n +9 >> $born/etc/fstab
+	print_color "genfstab -U -p $born >> $born/etc/fstab" 33
+	genfstab $born >> $born/etc/fstab
+
+	echo "tmpfs	/home/$(cat $temp/addUser)/.cache	tmpfs	noatime,nodev,nosuid,size=1G	0	0" >> $born/etc/fstab
+
+	# sed -i s/"\/mnt\/"/"\/"/ /mnt/etc/fstab
+	# sed -i s/"\/mnt"/"\/ "/ /mnt/etc/fstab
+
+	# if is_efi
+	# then
+	# echo -e "# /esp/EFI/arch" >> $born/etc/fstab
+	# echo -e "/esp/EFI/arch\t/boot\tnone\tdefaults,bind\t0 0" >> $born/etc/fstab
+	# fi
+	cat $born/etc/fstab
 }
 
 85_zsh() {
