@@ -375,7 +375,10 @@ echo "$timezone" > $temp/timeZone
 	#optional
 	# pacstrap $born openssh zsh rsync wget dialog vim
 	print_color "install wget to post possible download script"
-	pacstrap $born wget openssh rsync neovim unison # to download post script installation
+	pacstrap $born wget openssh rsync neovim \
+		unison \ # to download post script installation
+		intel-ucode  # resolve TSC_DATA error
+
 
 
 end=$(date +%s)
