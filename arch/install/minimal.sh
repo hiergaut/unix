@@ -384,19 +384,21 @@ echo "$timezone" > $temp/timeZone
 	#optional
 	# pacstrap $born openssh zsh rsync wget dialog vim
 	print_color "install wget to post possible download script"
-	pacstrap $born wget openssh rsync neovim \
-		# to download post script installation
-		unison \
-		# resolve TSC_DATA error
-		intel-ucode  
+	pacstrap $born wget openssh rsync neovim
+
+	# to download post script installation
+	pacstrap $born unison
+
+	# resolve TSC_DATA error before bootloader update
+	pacstrap $born intel-ucode  
 
 
 
-end=$(date +%s)
-diff=$(echo $end - $start | bc)
-min=$(echo "$diff / 60" | bc)
-sec=$(echo "$diff % 60" | bc)
-print_color "total base install time : $min min and $sec sec" "1;33"
+	end=$(date +%s)
+	diff=$(echo $end - $start | bc)
+	min=$(echo "$diff / 60" | bc)
+	sec=$(echo "$diff % 60" | bc)
+	print_color "total base install time : $min min and $sec sec" "1;33"
 }
 
 30_mirror2() {
