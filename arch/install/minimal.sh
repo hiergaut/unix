@@ -220,7 +220,7 @@ echo "$timezone" > $temp/timeZone
 
 
 
-	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 0 0 \
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 100 0 \
 		"${options[@]}" \
 		3>&1 1>&2 2>&3)
 
@@ -293,6 +293,7 @@ echo "$timezone" > $temp/timeZone
 
 15_mounting() {
 	device=$(cat $temp/format)
+	umount -R /mnt && sleep 0
 
 	if is_efi
 	then
