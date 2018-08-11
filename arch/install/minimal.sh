@@ -220,7 +220,7 @@ echo "$timezone" > $temp/timeZone
 
 
 
-	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 100 0 \
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 0 0 \
 		"${options[@]}" \
 		3>&1 1>&2 2>&3)
 
