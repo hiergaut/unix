@@ -643,9 +643,10 @@ echo "$userName" > $temp/addUser
 	pacstrap $born zsh
 
 	print_color "arch-chroot $born /bin/sh << EOF
-	chsh -s /bin/zsh
-	EOF
-	" 33
+chsh -s /bin/zsh
+EOF
+" 33
+
 	arch-chroot $born /bin/bash << EOF
 chsh -s /bin/zsh
 EOF
@@ -683,12 +684,12 @@ EOF
 		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
 		psk=$(cat $f | grep Key | awk -F= '{print $2}')
 
-		file="$bord/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
+		file="$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
 
 		#TODO bad \ on string psk
 		echo "ctrl_interface=/var/run/wpa_supplicant
-		update_config=1
-		" > $file
+update_config=1
+" > $file
 
 		wpa_passphrase "$essid" "$psk" | grep '#psk=' -v >> $file
 
@@ -703,14 +704,13 @@ EOF
 
 
 		print_color "arch-chroot $born /bin/bash << EOF
-		systemctl enable wpa_supplicant@$interface
-		EOF
-		" 33
+systemctl enable wpa_supplicant@$interface
+EOF
+" 33
 
 		arch-chroot $born /bin/bash << EOF
 systemctl enable wpa_supplicant@$interface
 EOF
-
 
 	fi
 
@@ -729,7 +729,7 @@ EOF
 
 
 case $1 in
-	-d)
+	"-d")
 		print_color "enable debug mode" 33
 		debug="enable"
 		;;
