@@ -215,135 +215,143 @@ echo "$timezone" > $temp/timeZone
 	for item in $items; do
 		options+=("$item" "")
 	done
-	# key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
 
-		device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 0 0 \
+	# key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30
+
+
+
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 0 0 \
 		"${options[@]}" \
 		3>&1 1>&2 2>&3)
 
-		device="/dev/$device"
+	device="/dev/$device"
 
 
-		if is_efi
+	if is_efi
+	then
+		# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
+		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n                Commit ?" 0 0)
 		then
-			# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-			if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n                Commit ?" 0 0)
-			then
-				echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
-				parted $device mklabel gpt -ms
-				echo -e "\\033[33mparted $device mkpart ESP fat32 1MiB 513Mib\\033[0m"
-				parted $device mkpart ESP fat32 1MiB 513Mib -ms
-				echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
-				parted $device set 1 boot on -ms
-				echo
+			echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
+			parted $device mklabel gpt -ms
+			echo -e "\\033[33mparted $device mkpart ESP fat32 1MiB 513Mib\\033[0m"
+			parted $device mkpart ESP fat32 1MiB 513Mib -ms
+			echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
+			parted $device set 1 boot on -ms
+			echo
 
-				echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
-				#TODO maybe 50Gb for root part
-				parted $device mkpart primary ext4 513Mib 40.5Gib -ms
+			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
+			#TODO maybe 50Gb for root part
+			parted $device mkpart primary ext4 513Mib 40.5Gib -ms
 
-				echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
-				parted $device mkpart primary ext4 40.5Gib 100% -ms
-				echo
+			echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
+			parted $device mkpart primary ext4 40.5Gib 100% -ms
+			echo
 
-				echo -e "\\033[33mmkfs.vfat -F32 "$device"1\\033[0m"
-				mkfs.vfat -F32 "$device"1 <<< y
-				echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
-				mkfs.ext4 "$device"2 <<< y
-				echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
-				mkfs.ext4 "$device"3 <<< y
-			else
-				return 1
-			fi
+			echo -e "\\033[33mmkfs.vfat -F32 "$device"1\\033[0m"
+			mkfs.vfat -F32 "$device"1 <<< y
+			echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
+			mkfs.ext4 "$device"2 <<< y
+			echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
+			mkfs.ext4 "$device"3 <<< y
 		else
-			if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device"1   512M   Linux filesystem /boot\n"$device"2   40G    Linux Filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n             Commit ?" 0 0)
-			then
-				echo -e "\\033[33mparted $device mklabel dos\\033[0m"
-				parted $device mklabel msdos -ms
-				# parted $device mklabel gpt -ms
-				echo -e "\\033[33mparted $device mkpart ext2 1MiB 513Mib\\033[0m"
-				parted $device mkpart primary ext2 1MiB 513Mib -ms
-				echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
-				parted $device set 1 boot on -ms
-				# parted $device set 1 bios-grub on -ms
-
-				echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
-				parted $device mkpart primary ext4 513Mib 40.5Gib -ms
-				echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
-				parted $device mkpart primary ext4 40.5Gib 100% -ms
-				echo
-
-				echo -e "\\033[33mmkfs.ext2 "$device"1\\033[0m"
-				mkfs.ext2 "$device"1 <<< y
-				echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
-				mkfs.ext4 "$device"2 <<< y
-				echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
-				mkfs.ext4 "$device"3 <<< y
-			else
-				return 1
-			fi
+			return 1
 		fi
-
-		print_color "fdisk -l $device" 33
-		fdisk -l $device
-		echo "$device" > $temp/format
-	}
-
-	15_mounting() {
-		device=$(cat $temp/format)
-
-		if is_efi
+	else
+		if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device"1   512M   Linux filesystem /boot\n"$device"2   40G    Linux Filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n             Commit ?" 0 0)
 		then
-			mount -v "$device"2 $born #root
+			echo -e "\\033[33mparted $device mklabel dos\\033[0m"
+			parted $device mklabel msdos -ms
+			# parted $device mklabel gpt -ms
+			echo -e "\\033[33mparted $device mkpart ext2 1MiB 513Mib\\033[0m"
+			parted $device mkpart primary ext2 1MiB 513Mib -ms
+			echo -e "\\033[33mparted $device set 1 boot on\\033[0m"
+			parted $device set 1 boot on -ms
+			# parted $device set 1 bios-grub on -ms
 
-			mkdir -v $born/home
-			mount -v "$device"3 $born/home/
+			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
+			parted $device mkpart primary ext4 513Mib 40.5Gib -ms
+			echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
+			parted $device mkpart primary ext4 40.5Gib 100% -ms
+			echo
 
-			mkdir -pv $efi_rep
-			mount -t vfat "$device"1 $efi_rep
-			# mkdir -v $born/esp
-			# mount -v "$device"1 $born/esp/
-			# mkdir -pv $born/esp/EFI/arch/
-			# mount -v --bind $born/esp/EFI/arch/ $born/boot/
+			echo -e "\\033[33mmkfs.ext2 "$device"1\\033[0m"
+			mkfs.ext2 "$device"1 <<< y
+			echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
+			mkfs.ext4 "$device"2 <<< y
+			echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
+			mkfs.ext4 "$device"3 <<< y
 		else
-			mount -v "$device"2 $born
-			mkdir -v $born/home
-			mkdir -v $born/boot
-			mount -v "$device"1 $born/boot/
-			mount -v "$device"3 $born/home/
+			return 1
 		fi
+	fi
 
-		print_color "df" 33
-		df | grep -E "$|$device"
-	}
+	print_color "fdisk -l $device" 33
+	fdisk -l $device
+	echo "$device" > $temp/format
+}
 
-	20_mirror() {
-		yourCountry=$(cat $temp/yourCountry)
+15_mounting() {
+	device=$(cat $temp/format)
 
-		file="/etc/pacman.d/mirrorlist"
+	if is_efi
+	then
+		mount -v "$device"2 $born #root
 
-		if ! [ -f $file.default ]
-		then
-			cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.default
-		fi
+		mkdir -v $born/home
+		mount -v "$device"3 $born/home/
 
-		items=$(cat /etc/pacman.d/mirrorlist.default | grep '##' | awk '{print $2}' | sort | uniq)
-		options=()
-		for item in $items; do
-			options+=("$item" "")
-		done
-		# country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
-			country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --default-item "$yourCountry" --menu "" 0 0 0 \
-			"${options[@]}" \
-			3>&1 1>&2 2>&3)
+		mkdir -pv $efi_rep
+		mount -t vfat "$device"1 $efi_rep
+		# mkdir -v $born/esp
+		# mount -v "$device"1 $born/esp/
+		# mkdir -pv $born/esp/EFI/arch/
+		# mount -v --bind $born/esp/EFI/arch/ $born/boot/
+	else
+		mount -v "$device"2 $born
+		mkdir -v $born/home
+		mkdir -v $born/boot
+		mount -v "$device"1 $born/boot/
+		mount -v "$device"3 $born/home/
+	fi
 
-		head -n 6 $file.default > $file
-		# cat $file
+	print_color "df" 33
+	df | grep -E "$|$device"
+}
 
-		echo "## $country" >> $file
-		# cat $file
-		cat $file.default | while read line
+20_mirror() {
+	yourCountry=$(cat $temp/yourCountry)
+
+	file="/etc/pacman.d/mirrorlist"
+
+	if ! [ -f $file.default ]
+	then
+		cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.default
+	fi
+
+
+
+	# items=$(cat /etc/pacman.d/mirrorlist.default | grep '##' | awk '{print $2}' | sort | uniq)
+	# options=()
+	# for item in $items; do
+	#     options+=("$item" "")
+	# done
+	# # country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --menu "" 40 40 30 \
+	#     country=$($DIALOG --backtitle "$appTitle" --title "Select Country Mirror" --default-item "$yourCountry" --menu "" 0 0 0 \
+	#     "${options[@]}" \
+	#     3>&1 1>&2 2>&3)
+
+
+
+	head -n 6 $file.default > $file
+	# cat $file
+
+	echo "## $yourCountry" >> $file
+	# cat $file
+
+	cat $file.default | while read line
 	do
-		if echo $line | grep $country > /dev/null
+		if echo $line | grep $yourCountry > /dev/null
 		then
 			read line
 			echo $line >> $file
@@ -376,8 +384,10 @@ echo "$timezone" > $temp/timeZone
 	# pacstrap $born openssh zsh rsync wget dialog vim
 	print_color "install wget to post possible download script"
 	pacstrap $born wget openssh rsync neovim \
-		unison \ # to download post script installation
-		intel-ucode  # resolve TSC_DATA error
+		# to download post script installation
+		unison \
+		# resolve TSC_DATA error
+		intel-ucode  
 
 
 
@@ -674,8 +684,8 @@ EOF
 
 		#TODO bad \ on string psk
 		echo "ctrl_interface=/var/run/wpa_supplicant
-update_config=1
-" > $file
+		update_config=1
+		" > $file
 
 		wpa_passphrase "$essid" "$psk" | grep '#psk=' -v >> $file
 
@@ -719,6 +729,9 @@ case $1 in
 	-d)
 		print_color "enable debug mode" 33
 		debug="enable"
+		;;
+
+	"")
 		;;
 
 	*)
