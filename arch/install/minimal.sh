@@ -625,7 +625,7 @@ echo "$userName" > $temp/addUser
 	print_color "genfstab -U -p $born >> $born/etc/fstab" 33
 	genfstab $born >> $born/etc/fstab
 
-	echo "tmpfs	/home/$(cat $temp/addUser)/.cache	tmpfs	noatime,nodev,nosuid,size=1G	0	0" >> $born/etc/fstab
+	echo "tmpfs\t/home/$(cat $temp/addUser)/.cache\ttmpfs\tnoatime,nodev,nosuid,size=1G\t0\t0" >> $born/etc/fstab
 
 	# sed -i s/"\/mnt\/"/"\/"/ /mnt/etc/fstab
 	# sed -i s/"\/mnt"/"\/ "/ /mnt/etc/fstab
