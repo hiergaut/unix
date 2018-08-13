@@ -95,6 +95,8 @@ if [ ! -e $temp/start ]; then
 	echo $(date +%s) > $temp/start
 fi
 
+umount -R /mnt && sleep 0
+
 00_keyboard() {
 	# items=$(localectl list-keymaps)
 	#TODO auto select with the current keymap
@@ -293,7 +295,6 @@ echo "$timezone" > $temp/timeZone
 
 15_mounting() {
 	device=$(cat $temp/format)
-	umount -R /mnt && sleep 0
 
 	if is_efi
 	then
