@@ -683,7 +683,7 @@ EOF
 
 		interface=$(cat $f | grep Interface | awk -F= '{print $2}')
 		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
-		psk=$(cat $f | grep Key | awk -F= '{print $2}')
+		psk=$(cat $f | grep Key | awk -F= '{print $2}' | tr -d '\\')
 
 		file="$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
 
