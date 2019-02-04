@@ -228,6 +228,8 @@ echo "$timezone" > $temp/timeZone
 
 	device="/dev/$device"
 
+	#TODO maybe 50G for root filesystem
+
 
 	if is_efi
 	then
@@ -583,6 +585,7 @@ EOF
 }
 
 80_addUser() {
+	#TODO test empty user get in by dialog
 	while [ -z "$userName" ]
 	do
 		userName=$($DIALOG --backtitle "$appTitle" --title "Add User" --inputbox "" 0 0 "" 3>&1 1>&2 2>&3)
