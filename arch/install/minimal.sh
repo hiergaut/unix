@@ -234,7 +234,7 @@ echo "$timezone" > $temp/timeZone
 	if is_efi
 	then
 		# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n                Commit ?" 0 0)
+		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   50G    Linux filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n                Commit ?" 0 0)
 		then
 			echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
 			parted $device mklabel gpt -ms
@@ -244,14 +244,15 @@ echo "$timezone" > $temp/timeZone
 			parted $device set 1 boot on -ms
 			echo
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 40.5Gib\\033[0m"
+			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 50.5Gib\\033[0m"
 			#TODO maybe 50Gb for root part
-			parted $device mkpart primary ext4 513Mib 40.5Gib -ms
+			parted $device mkpart primary ext4 513Mib 50.5Gib -ms
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 40.5Gib 100%\\033[0m"
-			parted $device mkpart primary ext4 40.5Gib 100% -ms
+			echo -e "\\033[33mparted $device mkpart primary ext4 50.5Gib 100%\\033[0m"
+			parted $device mkpart primary ext4 50.5Gib 100% -ms
 			echo
 
+			#TODO bad device number p1 p2 p3 not 11 22 33, find device name
 			echo -e "\\033[33mmkfs.vfat -F32 "$device"1\\033[0m"
 			mkfs.vfat -F32 "$device"1 <<< y
 			echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
@@ -300,6 +301,7 @@ echo "$timezone" > $temp/timeZone
 
 	if is_efi
 	then
+		#TODO bad device number p1 p2 p3 not 11 22 33, find device name
 		mount -v "$device"2 $born #root
 
 		mkdir -v $born/home
@@ -688,6 +690,7 @@ EOF
 		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
 		psk=$(cat $f | grep Key | awk -F= '{print $2}' | tr -d '\\')
 
+		#TODO bad interface null
 		file="$born/etc/wpa_supplicant/wpa_supplicant-$interface.conf"
 
 		#TODO bad \ on string psk
@@ -695,6 +698,7 @@ EOF
 update_config=1
 " > $file
 
+		#TODO bad passphrase
 		wpa_passphrase "$essid" "$psk" | grep '#psk=' -v >> $file
 
 
@@ -799,3 +803,6 @@ if ($DIALOG --backtitle "$appTitle" --title "Shutdown (install duration : $min m
 then
 	poweroff
 fi
+
+
+#TODO wifi bad config after reboot
