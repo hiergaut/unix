@@ -108,7 +108,7 @@ umount -R /mnt && sleep 0
 		options+=("$item" "")
 	done
 	# key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --menu "" 40 40 30 \
-		key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --default-item "dvorak-programmer" --menu "" 0 0 0 \
+	key=$($DIALOG --backtitle "$appTitle" --title "Keymap Selection" --default-item "dvorak-programmer" --menu "" 0 0 0 \
 		"${options[@]}" \
 		3>&1 1>&2 2>&3)
 
@@ -158,9 +158,9 @@ umount -R /mnt && sleep 0
 	# done
 	#
 	# # timezone=$($DIALOG --backtitle "$appTitle" --title "Time zone" --default-item "$yourContry" --menu "" 0 0 0 \
-		# timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone" --menu "$yourCountry" 0 0 0 \
-		#     "${options[@]}" \
-		#     3>&1 1>&2 2>&3)
+	# timezone=$($DIALOG --backtitle "$appTitle" --title "Select your timezone" --menu "$yourCountry" 0 0 0 \
+	#     "${options[@]}" \
+	#     3>&1 1>&2 2>&3)
 	#
 	# if [ ! "$?" = "0" ]; then
 	#     return 1
@@ -180,9 +180,9 @@ umount -R /mnt && sleep 0
 	# options+=("$item" "")
 	# done
 	# # timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 40 30 30 \
-		# timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
-		# "${options[@]}" \
-		# 3>&1 1>&2 2>&3)
+	# timezone=$timezone/$($DIALOG --backtitle "$appTitle" --title "Time zone" --menu "" 0 0 0 \
+	# "${options[@]}" \
+	# 3>&1 1>&2 2>&3)
 
 	# capital=$(curl https://raw.githubusercontent.com/samayo/country-json/master/src/country-by-capital-city.json | grep -A 1 "\"$yourCountry\"" | tail -n1 | awk '{print $2}')
 
@@ -226,12 +226,12 @@ echo "$timezone" > $temp/timeZone
 		"${options[@]}" \
 		3>&1 1>&2 2>&3)
 
+	if [ $device = "nvme0n1" ]; then
+		post="p"
+	fi
 	device="/dev/$device"
 
 	#TODO maybe 50G for root filesystem
-			if [ $device = "nvme0n1" ]; then
-				post="p"
-			fi
 
 
 	if is_efi
@@ -366,14 +366,14 @@ echo "$timezone" > $temp/timeZone
 	# cat $file
 
 	cat $file.default | while read line
-	do
-		if echo $line | grep $yourCountry > /dev/null
-		then
-			read line
-			echo $line >> $file
-			# echo $line
-		fi
-	done
+do
+	if echo $line | grep $yourCountry > /dev/null
+	then
+		read line
+		echo $line >> $file
+		# echo $line
+	fi
+done
 
 	# pacman-mirrors -g
 	if ! rankmirrors > /dev/null 2>&1; then
@@ -409,11 +409,11 @@ echo "$timezone" > $temp/timeZone
 
 
 
-	end=$(date +%s)
-	diff=$(echo $end - $start | bc)
-	min=$(echo "$diff / 60" | bc)
-	sec=$(echo "$diff % 60" | bc)
-	print_color "total base install time : $min min and $sec sec" "1;33"
+end=$(date +%s)
+diff=$(echo $end - $start | bc)
+min=$(echo "$diff / 60" | bc)
+sec=$(echo "$diff % 60" | bc)
+print_color "total base install time : $min min and $sec sec" "1;33"
 }
 
 30_mirror2() {
@@ -495,15 +495,15 @@ EOF
 # efibootmgr -T
 # EOF
 
-	else
-		#grub efi
-		pacstrap $born grub os-prober
-		pacstrap $born dosfstools
+else
+	#grub efi
+	pacstrap $born grub os-prober
+	pacstrap $born dosfstools
 
-		grub_file="/etc/default/grub"
+	grub_file="/etc/default/grub"
 
-		mkdir -pv $efi_rep/EFI
-		arch-chroot $born /bin/bash << EOF
+	mkdir -pv $efi_rep/EFI
+	arch-chroot $born /bin/bash << EOF
 grub-install --target=i386-pc --no-floppy --recheck $device
 cp -v $grub_file $grub_file.default
 sed -i s/"GRUB_TIMEOUT=5"/"GRUB_TIMEOUT=0"/ $grub_file
@@ -517,7 +517,7 @@ EOF
 # sed -i s/"TIMEOUT [0-9][0-9]"/"TIMEOUT 01"/ /boot/syslinux/syslinux.cfg
 # sed -i s/"APPEND root=\/"$device"3 rw"/"APPEND root=\/"$device"2 rw"/ /boot/syslinux/syslinux.cfg
 # EOF
-	fi
+fi
 }
 
 # 55_rootPasswd() {
@@ -659,9 +659,9 @@ echo "$userName" > $temp/addUser
 	pacstrap $born zsh
 
 	print_color "arch-chroot $born /bin/sh << EOF
-chsh -s /bin/zsh
-EOF
-" 33
+	chsh -s /bin/zsh
+	EOF
+	" 33
 
 	arch-chroot $born /bin/bash << EOF
 chsh -s /bin/zsh
@@ -705,8 +705,8 @@ EOF
 
 		#TODO bad \ on string psk
 		echo "ctrl_interface=/var/run/wpa_supplicant
-update_config=1
-" > $file
+		update_config=1
+		" > $file
 
 		#TODO bad passphrase
 		wpa_passphrase "$essid" "$psk" | grep '#psk=' -v >> $file
@@ -722,18 +722,18 @@ update_config=1
 
 
 		print_color "arch-chroot $born /bin/bash << EOF
-systemctl enable wpa_supplicant@$interface
-EOF
-" 33
+		systemctl enable wpa_supplicant@$interface
+		EOF
+		" 33
 
 		arch-chroot $born /bin/bash << EOF
 systemctl enable wpa_supplicant@$interface
 EOF
 
-	fi
+fi
 
-	print_color "enable dhcpcd" 33
-	arch-chroot $born /bin/bash << EOF
+print_color "enable dhcpcd" 33
+arch-chroot $born /bin/bash << EOF
 systemctl enable dhcpcd
 EOF
 }
@@ -764,25 +764,25 @@ esac
 
 for function in $(declare -F | awk '{print $3}' | grep '^[0-9][0-9]_.*$')
 	# for function in \
-		# keyboard \
-		# timeZone \
-		# format \
-		# mounting \
-		# mirror \
-		# base \
-		# mirror2 \
-		# hostname \
-		# fstab \
-		# bootLoader \
-		# timeZone2 \
-		# locale \
-		# keyboard2 \
-		# mkinit \
-		# addUser \
-		# zsh \
-		# sudoers \
-		# wifi \
-		# umounting
+	# keyboard \
+	# timeZone \
+	# format \
+	# mounting \
+	# mirror \
+	# base \
+	# mirror2 \
+	# hostname \
+	# fstab \
+	# bootLoader \
+	# timeZone2 \
+	# locale \
+	# keyboard2 \
+	# mkinit \
+	# addUser \
+	# zsh \
+	# sudoers \
+	# wifi \
+	# umounting
 do
 	# echo "$function"
 	# continue
