@@ -229,12 +229,15 @@ echo "$timezone" > $temp/timeZone
 	device="/dev/$device"
 
 	#TODO maybe 50G for root filesystem
+			if [ $device == "nvme0n1" ]; then
+				post="p"
+			fi
 
 
 	if is_efi
 	then
 		# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device"1   512M   EFI System\n"$device"2   50G    Linux filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n                Commit ?" 0 0)
+		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device$post"1    512M    EFI System\n"$device$post"2  512M-50%  Linux filesystem /\n"$device$post"3  50%-100%  Linux filesystem /home\n\n\n                Commit ?" 0 0)
 		then
 			echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
 			parted $device mklabel gpt -ms
@@ -257,17 +260,17 @@ echo "$timezone" > $temp/timeZone
 			echo
 
 			#TODO bad device number p1 p2 p3 not 11 22 33, find device name
-			echo -e "\\033[33mmkfs.vfat -F32 "$device"1\\033[0m"
-			mkfs.vfat -F32 "$device"1 <<< y
-			echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
-			mkfs.ext4 "$device"2 <<< y
-			echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
-			mkfs.ext4 "$device"3 <<< y
+			echo -e "\\033[33mmkfs.vfat -F32 "$device$post"1\\033[0m"
+			mkfs.vfat -F32 "$device$post"1 <<< y
+			echo -e "\\033[33mmkfs.ext4 "$device$post"2\\033[0m"
+			mkfs.ext4 "$device$post"2 <<< y
+			echo -e "\\033[33mmkfs.ext4 "$device$post"3\\033[0m"
+			mkfs.ext4 "$device$post"3 <<< y
 		else
 			return 1
 		fi
 	else
-		if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device"1   512M   Linux filesystem /boot\n"$device"2   40G    Linux Filesystem /\n"$device"3   *G     Linux filesystem /home\n\n\n             Commit ?" 0 0)
+		if ($DIALOG --backtitle "$appTitle" --title "Format DOS" --yesno "\n"$device$post"1   512M   Linux filesystem /boot\n"$device$post"2   40G    Linux Filesystem /\n"$device$post"3   *G     Linux filesystem /home\n\n\n             Commit ?" 0 0)
 		then
 			echo -e "\\033[33mparted $device mklabel dos\\033[0m"
 			parted $device mklabel msdos -ms
@@ -284,8 +287,8 @@ echo "$timezone" > $temp/timeZone
 			parted $device mkpart primary ext4 40.5Gib 100% -ms
 			echo
 
-			echo -e "\\033[33mmkfs.ext2 "$device"1\\033[0m"
-			mkfs.ext2 "$device"1 <<< y
+			echo -e "\\033[33mmkfs.ext2 "$device$post"1\\033[0m"
+			mkfs.ext2 "$device$post"1 <<< y
 			echo -e "\\033[33mmkfs.ext4 "$device"2\\033[0m"
 			mkfs.ext4 "$device"2 <<< y
 			echo -e "\\033[33mmkfs.ext4 "$device"3\\033[0m"
@@ -298,31 +301,34 @@ echo "$timezone" > $temp/timeZone
 	print_color "fdisk -l $device" 33
 	fdisk -l $device
 	echo "$device" > $temp/format
+	echo "$post" > $temp/post
 }
 
 15_mounting() {
 	device=$(cat $temp/format)
+	post=$(cat $temp/post)
+
 
 	if is_efi
 	then
 		#TODO bad device number p1 p2 p3 not 11 22 33, find device name
-		mount -v "$device"2 $born #root
+		mount -v "$device$post"2 $born #root
 
 		mkdir -v $born/home
-		mount -v "$device"3 $born/home/
+		mount -v "$device$post"3 $born/home/
 
 		mkdir -pv $efi_rep
-		mount -t vfat "$device"1 $efi_rep
+		mount -t vfat "$device$post"1 $efi_rep
 		# mkdir -v $born/esp
 		# mount -v "$device"1 $born/esp/
 		# mkdir -pv $born/esp/EFI/arch/
 		# mount -v --bind $born/esp/EFI/arch/ $born/boot/
 	else
-		mount -v "$device"2 $born
+		mount -v "$device$post"2 $born
 		mkdir -v $born/home
 		mkdir -v $born/boot
-		mount -v "$device"1 $born/boot/
-		mount -v "$device"3 $born/home/
+		mount -v "$device$post"1 $born/boot/
+		mount -v "$device$post"3 $born/home/
 	fi
 
 	print_color "df" 33
