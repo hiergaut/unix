@@ -229,7 +229,7 @@ echo "$timezone" > $temp/timeZone
 	device="/dev/$device"
 
 	#TODO maybe 50G for root filesystem
-			if [ $device == "nvme0n1" ]; then
+			if [ $device == "nvme0n" ]; then
 				post="p"
 			fi
 
