@@ -244,12 +244,16 @@ echo "$timezone" > $temp/timeZone
 			parted $device set 1 boot on -ms
 			echo
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 50.5Gib\\033[0m"
+			# echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 50.5Gib\\033[0m"
+			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 50%\\033[0m"
 			#TODO maybe 50Gb for root part
-			parted $device mkpart primary ext4 513Mib 50.5Gib -ms
+			# parted $device mkpart primary ext4 513Mib 50.5Gib -ms
+			parted $device mkpart primary ext4 513Mib 50% -ms
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 50.5Gib 100%\\033[0m"
-			parted $device mkpart primary ext4 50.5Gib 100% -ms
+			# echo -e "\\033[33mparted $device mkpart primary ext4 50.5Gib 100%\\033[0m"
+			echo -e "\\033[33mparted $device mkpart primary ext4 50% 100%\\033[0m"
+			# parted $device mkpart primary ext4 50.5Gib 100% -ms
+			parted $device mkpart primary ext4 50% 100% -ms
 			echo
 
 			#TODO bad device number p1 p2 p3 not 11 22 33, find device name
