@@ -222,7 +222,8 @@ echo "$timezone" > $temp/timeZone
 
 
 
-	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S -e 11 && echo)" 0 0 0 \
+	# device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S -e 11 && echo)" 0 0 0 \
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -d && echo)" 0 0 0 \
 		"${options[@]}" \
 		3>&1 1>&2 2>&3)
 
@@ -694,7 +695,7 @@ EOF
 		# pacstrap $born wpa_supplicant dialog #for wifi-menu
 		pacstrap $born wpa_supplicant
 		# cp -v /etc/netctl/wlp* $born/etc/netctl/
-		f="/etc/netctl/wlp*"
+		f="/etc/netctl/wl*"
 
 		interface=$(cat $f | grep Interface | awk -F= '{print $2}')
 		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
