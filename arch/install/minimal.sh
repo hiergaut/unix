@@ -88,14 +88,15 @@ born="/mnt"
 appTitle="Archlinux Installer"
 temp="/tmp/minimal"
 efi_rep="$born/boot/efi"
-DIALOG=${DIALOG=dialog}
+# DIALOG=${DIALOG=dialog}
+DIALOG=dialog
 
 mkdir -pv $temp
 if [ ! -e $temp/start ]; then
 	echo $(date +%s) > $temp/start
 fi
 
-umount -R /mnt && sleep 0
+# umount -R /mnt && sleep 0
 
 00_keyboard() {
 	# items=$(localectl list-keymaps)
@@ -223,10 +224,9 @@ echo "$timezone" > $temp/timeZone
 
 
 	# device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S -e 11 && echo)" 0 0 0 \
-	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 0 0 \
 	# device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -d && echo)" 0 0 0 \
-		"${options[@]}" \
-		3>&1 1>&2 2>&3)
+	# device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 80 0 "${options[@]}" 3>&1 1>&2 2>&3)
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk && echo)" 0 80 0 "${options[@]}" 3>&1 1>&2 2>&3)
 
 	if [ $device = "nvme0n1" ]; then
 		post="p"
@@ -397,6 +397,8 @@ done
 	print_color "install base base-devel" 33
 	# time pacstrap $born base base-devel
 	pacstrap $born base base-devel
+	pacstrap $born linux #for mkinitcpio
+	pacstrap $born dhcpcd #wifi wpa
 
 	#optional
 	# pacstrap $born openssh zsh rsync wget dialog vim
@@ -408,6 +410,7 @@ done
 
 	# resolve TSC_DATA error before bootloader update
 	pacstrap $born intel-ucode  
+
 
 
 
@@ -459,6 +462,7 @@ print_color "total base install time : $min min and $sec sec" "1;33"
 		#grub efi
 		pacstrap $born grub os-prober
 		pacstrap $born efibootmgr dosfstools
+		#TODO pacstrap failed install package on chroot /mnt
 
 		grub_file="/etc/default/grub"
 
@@ -595,6 +599,7 @@ fi
 
 75_mkinit() {
 	print_color "mkinitcpio -p linux" 33
+	pacstrap $born mkinitcpio
 	arch-chroot $born mkinitcpio -p linux
 }
 
@@ -805,6 +810,7 @@ do
 		# optional
 		touch "/tmp/minimal/$function"
 		#TODO disable read to fast mode (read for debug mode)
+		# read
 	fi
 done
 
