@@ -320,7 +320,8 @@ echo "$timezone" > $temp/timeZone
 		mount -v "$device$post"3 $born/home/
 
 		mkdir -pv $efi_rep
-		mount -t vfat "$device$post"1 $efi_rep
+		# mount -t vfat "$device$post"1 $efi_rep
+		mount "$device$post"1 $efi_rep
 		# mkdir -v $born/esp
 		# mount -v "$device"1 $born/esp/
 		# mkdir -pv $born/esp/EFI/arch/
@@ -396,8 +397,8 @@ done
 
 	print_color "install base base-devel" 33
 	# time pacstrap $born base base-devel
-	pacstrap $born base base-devel
-	pacstrap $born linux #for mkinitcpio
+	pacstrap $born base base-devel linux linux-firmware
+	# pacstrap $born linux #for mkinitcpio
 	pacstrap $born dhcpcd #wifi wpa
 
 	#optional
@@ -460,13 +461,14 @@ print_color "total base install time : $min min and $sec sec" "1;33"
 	then
 
 		#grub efi
-		pacstrap $born grub os-prober
-		pacstrap $born efibootmgr dosfstools
+		# pacstrap $born grub os-prober
+		# pacstrap $born efibootmgr dosfstools
+		pacstrap $born grub efibootmgr
 		#TODO pacstrap failed install package on chroot /mnt
 
 		grub_file="/etc/default/grub"
 
-		mkdir -pv $efi_rep/EFI
+		# mkdir -pv $efi_rep/EFI
 		arch-chroot $born /bin/bash << EOF
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
 cp -v $grub_file $grub_file.default
@@ -502,6 +504,7 @@ EOF
 # EOF
 
 else
+	exit 5
 	#grub efi
 	pacstrap $born grub os-prober
 	pacstrap $born dosfstools
