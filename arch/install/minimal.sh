@@ -226,7 +226,7 @@ echo "$timezone" > $temp/timeZone
 	# device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S -e 11 && echo)" 0 0 0 \
 	# device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -d && echo)" 0 0 0 \
 	# device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk -S && echo)" 0 80 0 "${options[@]}" 3>&1 1>&2 2>&3)
-	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk && echo)" 0 80 0 "${options[@]}" 3>&1 1>&2 2>&3)
+	device=$($DIALOG --backtitle "$appTitle" --title "Select device to install" --menu "$(echo && lsblk && echo)" 0 0 0 "${options[@]}" 3>&1 1>&2 2>&3)
 
 	if [ $device = "nvme0n1" ]; then
 		post="p"
@@ -400,6 +400,8 @@ done
 	pacstrap $born base base-devel linux linux-firmware
 	# pacstrap $born linux #for mkinitcpio
 	pacstrap $born dhcpcd #wifi wpa
+
+	pacstrap $born net-tools  #command hostname not found
 
 	#optional
 	# pacstrap $born openssh zsh rsync wget dialog vim
