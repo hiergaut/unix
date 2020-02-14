@@ -705,6 +705,7 @@ EOF
 		pacstrap $born wpa_supplicant
 		# cp -v /etc/netctl/wlp* $born/etc/netctl/
 		f=$(ls /etc/netctl/wl*)
+		#TODO bad wlan0 to wlo1 msi
 		[ "$f" ]
 
 		interface=$(cat $f | grep Interface | awk -F= '{print $2}')
