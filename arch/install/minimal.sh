@@ -714,6 +714,7 @@ EOF
 		[ "$f" ]
 
 		interface=$(cat $f | grep Interface | awk -F= '{print $2}')
+		interface="wlo1" #msi
 		[ $interface ]
 		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
 		[ $essid ]
