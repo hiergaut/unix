@@ -378,16 +378,19 @@ do
 	fi
 done
 
-	# pacman-mirrors -g
-	if ! rankmirrors > /dev/null 2>&1; then
-		mount -o remount,size=4G /run/archiso/cowspace
-		pacman -Sy --noconfirm pacman-contrib
-	fi
+	# # pacman-mirrors -g
+	# if ! rankmirrors > /dev/null 2>&1; then
+	#     mount -o remount,size=4G /run/archiso/cowspace
+	#     pacman -Sy --noconfirm pacman-contrib
+	# fi
+    #
+	# print_color "create new file '/etc/pacman.d/mirrorlist' by rankmirrors" 33
+	# rankmirrors $file -v | tee /tmp/minimal/rank
+	# mv /tmp/minimal/rank $file
 
-	print_color "create new file '/etc/pacman.d/mirrorlist' by rankmirrors" 33
-	rankmirrors $file -v | tee /tmp/minimal/rank
-	mv /tmp/minimal/rank $file
-
+	mount -o remount,size=40 /run/archiso/crowspace
+	pacman -Sy --noconfirm reflector
+	reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save /etc/pacman.d/mirrorlist
 	# fi
 }
 
