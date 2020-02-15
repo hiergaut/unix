@@ -310,6 +310,7 @@ echo "$timezone" > $temp/timeZone
 	device=$(cat $temp/format)
 	post=$(cat $temp/post)
 
+	# umount -R /mnt && sleep 0
 
 	if is_efi
 	then
@@ -696,6 +697,7 @@ EOF
 }
 
 90_sudoers() {
+	pacstrap /mnt sudo
 	cp -v $born/etc/sudoers $born/etc/sudoers.default
 
 	sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' $born/etc/sudoers
