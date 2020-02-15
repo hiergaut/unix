@@ -388,9 +388,10 @@ done
 	# rankmirrors $file -v | tee /tmp/minimal/rank
 	# mv /tmp/minimal/rank $file
 
-	mount -o remount,size=40 /run/archiso/crowspace
+	mount -o remount,size=4G /run/archiso/cowspace
 	pacman -Sy --noconfirm reflector
-	reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save /etc/pacman.d/mirrorlist
+	reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save $file
+	cat $file
 	# fi
 }
 
@@ -400,7 +401,8 @@ done
 
 	print_color "install base base-devel" 33
 	# time pacstrap $born base base-devel
-	pacstrap $born base base-devel linux linux-firmware
+	# pacstrap $born base base-devel linux linux-firmware
+	pacstrap $born base linux linux-firmware
 	# pacstrap $born linux #for mkinitcpio
 	pacstrap $born dhcpcd #wifi wpa
 
