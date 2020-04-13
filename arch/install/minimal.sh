@@ -315,11 +315,13 @@ echo "$timezone" > $temp/timeZone
 	if is_efi
 	then
 		#TODO bad device number p1 p2 p3 not 11 22 33, find device name
+# born="/mnt"
 		mount -v "$device$post"2 $born #root
 
 		mkdir -v $born/home
 		mount -v "$device$post"3 $born/home/
 
+# efi_rep="$born/boot/efi"
 		mkdir -pv $efi_rep
 		# mount -t vfat "$device$post"1 $efi_rep
 		mount "$device$post"1 $efi_rep
@@ -476,13 +478,16 @@ print_color "total base install time : $min min and $sec sec" "1;33"
 
 		grub_file="/etc/default/grub"
 
+# grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
 		# mkdir -pv $efi_rep/EFI
 		arch-chroot $born /bin/bash << EOF
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
+grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi
 cp -v $grub_file $grub_file.default
 sed -i s/"GRUB_TIMEOUT=5"/"GRUB_TIMEOUT=0"/ $grub_file
 grub-mkconfig -o /boot/grub/grub.cfg
 EOF
+
+# grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi
 
 #syslinux efi
 # 	pacstrap $born syslinux dosfstools efibootmgr
