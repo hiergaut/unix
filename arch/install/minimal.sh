@@ -479,9 +479,10 @@ print_color "total base install time : $min min and $sec sec" "1;33"
 		grub_file="/etc/default/grub"
 
 # grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
+# grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi $device
 		# mkdir -pv $efi_rep/EFI
 		arch-chroot $born /bin/bash << EOF
-grub-install --target=x86_64-efi --bootloader-id=GRUB --efi-directory=/boot/efi
+grub-install --target=x86_64-efi --bootloader-id=arch_grub --efi-directory=/boot/efi $device
 cp -v $grub_file $grub_file.default
 sed -i s/"GRUB_TIMEOUT=5"/"GRUB_TIMEOUT=0"/ $grub_file
 grub-mkconfig -o /boot/grub/grub.cfg
