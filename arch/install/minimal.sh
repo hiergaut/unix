@@ -4,69 +4,88 @@
 #TODO play song at each user input 
 
 bar() {
-	tailleBar=$(expr $(tput cols) - 4) || sleep 0
+	tailleBar=$(tput cols)
+	part=$(expr $tailleBar / 4)
 
-	let "middleBar=$tailleBar/2" || sleep 0
+	# let "middleBar=$tailleBar/2"
+	# middleBar=$(expr $tailleBar / 2) || sleep 0
 
-	menu=$1
-	lenMenu=${#menu}
-	let "moitieLenMenu=$lenMenu/2" || sleep 0
-	let "impaire=$lenMenu%2" || sleep 0
+	str=$1
+	lenStr=${#str}
+	# let "moitieLenMenu=$lenMenu/2"
+	# moitieLenMenu=$(expr $lenStr / 2) || sleep 0
+	# let "impaire=$lenStr%2"
+	# impaire=$(expr $lenStr % 2) || sleep 0
 
-	let "bordureInf=$middleBar -$moitieLenMenu" || sleep 0
-	let "bordureSup=$middleBar +$moitieLenMenu" || sleep 0
+	# let "bordureInf=$middleBar -$moitieLenMenu"
+	bordureInf=$(expr $part - $lenStr) || sleep 0
+	# let "bordureSup=$middleBar +$moitieLenMenu"
+	# bordureSup=$(expr $middleBar + $moitieLenMenu) || sleep 0
 
-	echo -ne "\\033[1;36m"
+	echo -ne "\\033[1;44m"
 	for i in $(seq 1 $bordureInf); do
-		echo -n '+'
+		echo -n ' '
 	done
-	echo -en "\\033[0m"
+	# echo -en "\\033[0m"
 
-	echo -en "\\033[1;33m"
-	echo -n ' '
-	echo -n $menu
-	echo -n ' '
-	echo -en "\\033[0m"
 
-	let "lenSup=$tailleBar -$bordureSup" || sleep 0
-	echo -en "\\033[1;36m"
-	for i in $(seq 1 $lenSup); do
-		echo -n '+'
+	# echo -en "\\033[1;33m"
+	# echo -n ' '
+	echo -n "$str  "
+	# echo -n ' '
+	# echo -en "\\033[0m"
+
+	# let "lenSup=$tailleBar -$bordureSup"
+	# lenSup=$(expr $tailleBar - $bordureSup) || sleep 0
+	cmd=$(cat /proc/loadavg)
+	lenDate=${#cmd}
+
+	echo -en "\\033[0m"
+	bordureSup=$(expr $tailleBar - $part - 2 - $lenDate)
+	for i in $(seq 1 $bordureSup); do
+		echo -n ' '
 	done
 
-	if [ $impaire -eq 0 ]; then
-		echo -en '+'
-	fi
-
+	# if [ $impaire -eq 0 ]; then
+	#     echo -en '+'
+	# fi
+	#
+	echo -en "\\033[1;34m"
+	echo $cmd
 	echo -e "\\033[0m"
 }
 
 barStatus() {
-	if [ $# -ne 2 ] && [ $# -ne 1 ]; then
-		echo "usage :barStatus string color"
-		exit 1
-	fi
+	tailleBar=$(tput cols)
+	middle=$(expr $tailleBar / 2)
 
-	tailleBar=$(expr $(tput cols) - 4) || sleep 0
-	# middleBar=$(expr $tailleBar / 2)
+	# let "middleBar=$tailleBar/2"
+	# middleBar=$(expr $tailleBar / 2) || sleep 0
 
-	string="$1"
-	couleur=$2
-	if [ -z $2 ]; then
-		couleur=32
-	fi
-	lenString=${#string}
+	str=$1
+	lenStr=${#str}
+	# let "moitieLenMenu=$lenMenu/2"
+	# moitieLenMenu=$(expr $lenStr / 2) || sleep 0
+	# let "impaire=$lenStr%2"
+	# impaire=$(expr $lenStr % 2) || sleep 0
 
-	let "bordureInf=$tailleBar -$lenString +3" || sleep 0
+	# let "bordureInf=$middleBar -$moitieLenMenu"
+	bordureInf=$(expr $middle - $lenStr / 2 - 2) || sleep 0
+	# let "bordureSup=$middleBar +$moitieLenMenu"
+	# bordureSup=$(expr $middleBar + $moitieLenMenu) || sleep 0
 
+	# echo -ne "\\033[1;7;32m"
 	for i in $(seq 1 $bordureInf); do
 		echo -n ' '
 	done
+	# echo -en "\\033[0m"
 
-	# echo -ne "\\033[1;$couleur"m"$string"
-	# echo -e "\\033[0m"
 
-	echo -e "\\033[1;$couleur"m"$string\\033[0m"
+	# echo -n ' '
+	echo -en "\\033[1;44m"
+	echo -n " $str "
+	# echo -n ' '
+	echo -e "\\033[0m"
 }
 
 print_color() {
