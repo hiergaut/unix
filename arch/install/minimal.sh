@@ -385,22 +385,22 @@ echo "$timezone" > $temp/timeZone
 
 
 
-	head -n 6 $file.default > $file
-	# cat $file
-
-	echo "## $yourCountry" >> $file
-	# cat $file
-
-	cat $file.default | while read line
-do
-	if echo $line | grep $yourCountry > /dev/null
-	then
-		read line
-		echo $line >> $file
-		# echo $line
-	fi
-done
-
+#     head -n 6 $file.default > $file
+#     # cat $file
+#
+#     echo "## $yourCountry" >> $file
+#     # cat $file
+#
+#     cat $file.default | while read line
+# do
+#     if echo $line | grep $yourCountry > /dev/null
+#     then
+#         read line
+#         echo $line >> $file
+#         # echo $line
+#     fi
+# done
+#
 	# # pacman-mirrors -g
 	# if ! rankmirrors > /dev/null 2>&1; then
 	#     mount -o remount,size=4G /run/archiso/cowspace
@@ -413,8 +413,9 @@ done
 
 	mount -o remount,size=4G /run/archiso/cowspace
 	pacman -Sy --noconfirm reflector
-	reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save $file
-	cat $file
+	reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save /etc/pacman.d/reflector.txt
+	# cat $file
+	rankmirrors -n 12 /etc/pacman.d/reflector.txt > $file
 	# fi
 }
 
