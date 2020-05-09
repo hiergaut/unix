@@ -269,15 +269,15 @@ echo "$timezone" > $temp/timeZone
 			parted $device set 1 boot on -ms
 			echo
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 50.5Gib\\033[0m"
+			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 100.5Gib\\033[0m"
 			# echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 50%\\033[0m"
 			#TODO maybe 50Gb for root part
-			parted $device mkpart primary ext4 513Mib 50.5Gib -ms
+			parted $device mkpart primary ext4 513Mib 100.5Gib -ms
 			# parted $device mkpart primary ext4 513Mib 50% -ms
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 50.5Gib 100%\\033[0m"
+			echo -e "\\033[33mparted $device mkpart primary ext4 100.5Gib 100%\\033[0m"
 			# echo -e "\\033[33mparted $device mkpart primary ext4 50% 100%\\033[0m"
-			parted $device mkpart primary ext4 50.5Gib 100% -ms
+			parted $device mkpart primary ext4 100.5Gib 100% -ms
 			# parted $device mkpart primary ext4 50% 100% -ms
 			echo
 
@@ -412,7 +412,7 @@ echo "$timezone" > $temp/timeZone
 	# mv /tmp/minimal/rank $file
 
 	mount -o remount,size=4G /run/archiso/cowspace
-	pacman -Sy --noconfirm reflector
+	pacman -Sy --noconfirm reflector pacman-contrib
 	reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save /etc/pacman.d/reflector.txt
 	# cat $file
 	rankmirrors -n 12 /etc/pacman.d/reflector.txt > $file
@@ -443,6 +443,7 @@ echo "$timezone" > $temp/timeZone
 	# resolve TSC_DATA error before bootloader update
 	pacstrap $born intel-ucode  
 
+	pacstrap $born vi
 
 
 
@@ -684,7 +685,7 @@ echo "$userName" > $temp/addUser
 
 	# genfstab -U -p $born | head -n +9 >> $born/etc/fstab
 	print_color "genfstab -U -p $born >> $born/etc/fstab" 33
-	genfstab $born >> $born/etc/fstab
+	genfstab -U $born >> $born/etc/fstab
 
 	echo -e "tmpfs\t/home/$(cat $temp/addUser)/.cache\ttmpfs\tnoatime,nodev,nosuid,size=2G\t0\t0" >> $born/etc/fstab
 
