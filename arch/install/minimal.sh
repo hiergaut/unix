@@ -269,15 +269,16 @@ echo "$timezone" > $temp/timeZone
 			parted $device set 1 boot on -ms
 			echo
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 100.5Gib\\033[0m"
+			rootSize=128.5
+			echo -e "\\033[33mparted $device mkpart primary ext4 513Mib "$rootSize"Gib\\033[0m"
 			# echo -e "\\033[33mparted $device mkpart primary ext4 513Mib 50%\\033[0m"
 			#TODO maybe 50Gb for root part
-			parted $device mkpart primary ext4 513Mib 100.5Gib -ms
+			parted $device mkpart primary ext4 513Mib "$rootSize"Gib -ms
 			# parted $device mkpart primary ext4 513Mib 50% -ms
 
-			echo -e "\\033[33mparted $device mkpart primary ext4 100.5Gib 100%\\033[0m"
+			echo -e "\\033[33mparted $device mkpart primary ext4 "$rootSize"Gib 100%\\033[0m"
 			# echo -e "\\033[33mparted $device mkpart primary ext4 50% 100%\\033[0m"
-			parted $device mkpart primary ext4 100.5Gib 100% -ms
+			parted $device mkpart primary ext4 "$rootSize"Gib 100% -ms
 			# parted $device mkpart primary ext4 50% 100% -ms
 			echo
 
