@@ -258,7 +258,7 @@ echo "$timezone" > $temp/timeZone
 	if is_efi
 	then
 		# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
-		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device$post"1    512M    EFI System\n"$device$post"2  512M-50G  Linux filesystem /\n"$device$post"3  50G-100%  Linux filesystem /home\n\n\n                Commit ?" 0 0)
+		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device$post"1    512M    EFI System\n"$device$post"2  512M-100G  Linux filesystem /\n"$device$post"3  100G-100%  Linux filesystem /home\n\n\n                Commit ?" 0 0)
 		# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device$post"1    512M    EFI System\n"$device$post"2  512M-50%  Linux filesystem /\n"$device$post"3  50%-100%  Linux filesystem /home\n\n\n                Commit ?" 0 0)
 		then
 			echo -e "\\033[33mparted $device mklabel gpt\\033[0m"
