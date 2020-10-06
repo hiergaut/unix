@@ -122,6 +122,8 @@ fi
 	#TODO auto select with the current keymap
 	# can't find with localctl current keymap :(
 	# exit
+	pacman -Sy --noconfirm dialog
+
 	items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | awk -F. '{print $1}' | sort)
 	options=()
 	for item in $items; do
@@ -742,16 +744,20 @@ EOF
 		# pacstrap $born wpa_supplicant dialog #for wifi-menu
 		pacstrap $born wpa_supplicant
 		# cp -v /etc/netctl/wlp* $born/etc/netctl/
-		f=$(ls /etc/netctl/wl*)
+		# f=$(ls /etc/netctl/wl*)
+		f=$(ls /var/lib/iwd/*.psk)
 		#TODO bad wlan0 to wlo1 msi
 		[ "$f" ]
 
-		interface=$(cat $f | grep Interface | awk -F= '{print $2}')
-		interface="wlo1" #msi
+		# interface=$(cat $f | grep Interface | awk -F= '{print $2}')
+		# interface="wlo1" #msi
+		interface=$(basename /sys/class/net/wl*)
 		[ $interface ]
-		essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
+		# essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
+		essid=$(basename $f | awk -F. '{print $1}')
 		[ $essid ]
-		psk=$(cat $f | grep Key | awk -F= '{print $2}' | tr -d '\\')
+		# psk=$(cat $f | grep Key | awk -F= '{print $2}' | tr -d '\\')
+		psk=$(cat $f | grep Passphrase | awk -F= '{print $2}')
 		[ $psk ]
 
 		#TODO bad interface null
