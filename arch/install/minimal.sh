@@ -750,8 +750,8 @@ EOF
 		[ "$f" ]
 
 		# interface=$(cat $f | grep Interface | awk -F= '{print $2}')
-		# interface="wlo1" #msi
-		interface=$(basename /sys/class/net/wl*)
+		interface="wlo1" #msi
+		# interface=$(basename /sys/class/net/wl*)
 		[ $interface ]
 		# essid=$(cat $f | grep ESSID | awk -F= '{print $2}')
 		essid=$(basename $f | awk -F. '{print $1}')
