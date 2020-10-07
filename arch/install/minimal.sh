@@ -446,7 +446,7 @@ echo "$timezone" > $temp/timeZone
 	# resolve TSC_DATA error before bootloader update
 	pacstrap $born intel-ucode  
 
-	pacstrap $born vi
+	pacstrap $born vim
 
 
 
