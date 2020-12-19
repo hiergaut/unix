@@ -116,8 +116,11 @@ if [ ! -e $temp/start ]; then
 fi
 
 # umount -R /mnt && sleep 0
+00_update() {
+	pacman -Syu --noconrfirm #Reflector fix update
+}
 
-00_keyboard() {
+02_keyboard() {
 	# items=$(localectl list-keymaps)
 	#TODO auto select with the current keymap
 	# can't find with localctl current keymap :(
