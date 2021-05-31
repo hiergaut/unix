@@ -116,10 +116,10 @@ if [ ! -e $temp/start ]; then
 fi
 
 # umount -R /mnt && sleep 0
-00_update() {
-	mount -o remount,size=500M /run/archiso/cowspace
-	pacman -Syu --noconfirm #Reflector fix update
-}
+# 00_update() {
+#     mount -o remount,size=500M /run/archiso/cowspace
+#     pacman -Syu --noconfirm #Reflector fix update
+# }
 
 02_keyboard() {
 	# items=$(localectl list-keymaps)
