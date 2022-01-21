@@ -420,9 +420,11 @@ echo "$timezone" > $temp/timeZone
 
 	mount -o remount,size=4G /run/archiso/cowspace
 	pacman -Sy --noconfirm reflector pacman-contrib
-	reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save /etc/pacman.d/reflector.txt
+	# reflector -c "$yourCountry" -f 12 -l 10 -n 12 --save /etc/pacman.d/reflector.txt
+	reflector --country "$yourCountry" --latest 5 --age 2 --fastest 5 --protocol https --sort rate --save /etc/pacman.d/refletor.txt
+
 	# cat $file
-	rankmirrors -n 12 /etc/pacman.d/reflector.txt > $file
+	# rankmirrors -n 12 /etc/pacman.d/reflector.txt > $file
 	# fi
 }
 
