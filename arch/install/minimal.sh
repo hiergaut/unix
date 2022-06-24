@@ -264,6 +264,8 @@ echo "$timezone" > $temp/timeZone
 	if is_efi
 	then
 		rootSize=25%
+		#TODO: set by user 
+
 		# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno ""$device"1   512M   EFI System\n"$device"2   40G    Linux filesystem\n"$device"3   *G     Linux filesystem\n\n\n                                 Commit ?" 0 80)
 		if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device$post"1    512M    EFI System\n"$device$post"2  512M-$rootSize  Linux filesystem /\n"$device$post"3  $rootSize-100%  Linux filesystem /home\n\n\n                Commit ?" 0 0)
 		# if ($DIALOG --backtitle "$appTitle" --title "Format EFI" --yesno "\n"$device$post"1    512M    EFI System\n"$device$post"2  512M-50%  Linux filesystem /\n"$device$post"3  50%-100%  Linux filesystem /home\n\n\n                Commit ?" 0 0)
@@ -741,6 +743,8 @@ EOF
 	cp -v $born/etc/sudoers $born/etc/sudoers.default
 
 	sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' $born/etc/sudoers
+	#TODO: seems to not works
+
 	# sed -i 's/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/' $born/etc/sudoers
 }
 
