@@ -436,6 +436,7 @@ echo "$timezone" > $temp/timeZone
 25_base() {
 	start=$(date +%s)
 
+	# pacman-key --refresh-keys # signature failed when downloading packages
 
 	print_color "install base base-devel" 33
 	# time pacstrap $born base base-devel
@@ -579,29 +580,29 @@ EOF
 fi
 }
 
-# 55_rootPasswd() {
-#     # while true
-#     # do
-# 	# passwd $1
-# 	# [ $? -eq 0 ] && break
-#     # done
-#
-#     str1="a"
-#     str2="b"
-#     while [ $str1 != $str2 ]
-#     do
-# 	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-# 	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
-#     done
-#     passwd="$str1"
-#
-#     arch-chroot $born /bin/sh << EOF
-# echo -e "$passwd\n$passwd" | passwd root
-# EOF
-#
-#     echo "$passwd" > $temp/rootPasswd
-#     # while arch-chroot $born passwd root
-# }
+55_rootPasswd() {
+	# while true
+	# do
+	# passwd $1
+	# [ $? -eq 0 ] && break
+	# done
+
+	str1="a"
+	str2="b"
+	while [ $str1 != $str2 ]
+	do
+	str1=$($DIALOG --backtitle "$appTitle" --title "Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	str2=$($DIALOG --backtitle "$appTitle" --title "Repeat Passwd Root" --clear --insecure --passwordbox "" 0 0 "" 3>&1 1>&2 2>&3)
+	done
+	passwd="$str1"
+
+	arch-chroot $born /bin/sh << EOF
+echo -e "$passwd\n$passwd" | passwd root
+EOF
+
+	echo "$passwd" > $temp/rootPasswd
+	# while arch-chroot $born passwd root
+}
 
 60_timeZone2() {
 	# cp $born/etc/localtime $born/etc/localtime.default
@@ -743,6 +744,7 @@ EOF
 	cp -v $born/etc/sudoers $born/etc/sudoers.default
 
 	sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' $born/etc/sudoers
+	sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' $born/etc/sudoers
 	#TODO: seems to not works
 
 	# sed -i 's/# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/' $born/etc/sudoers
