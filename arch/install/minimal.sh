@@ -121,6 +121,12 @@ fi
 #     pacman -Syu --noconfirm #Reflector fix update
 # }
 
+01_pacman() {
+	sudo pacman-key --init
+	sudo pacman-key --populate archlinux
+	sudo pacman-key --refresh-keys
+}
+
 02_keyboard() {
 	# items=$(localectl list-keymaps)
 	#TODO auto select with the current keymap
