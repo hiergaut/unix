@@ -635,6 +635,7 @@ EOF
 	# LC_COLLATE=C' > $born/etc/locale.conf
 
 	arch-chroot $born locale-gen
+	arch-chroot $born localectl set-locale LANG=en_US.UTF-8
 
 	#TODO bad locale set
 	#     arch-chroot $born /bin/bash << EOF
